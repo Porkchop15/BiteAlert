@@ -21,6 +21,7 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = [
+  'https://bitealert-frontend.onrender.com',
   'http://localhost:3000',
   'http://192.168.1.10:3000',
   'http://localhost',
@@ -34,8 +35,8 @@ const allowedOrigins = [
   'https://bitealert-yzau.onrender.com',
   'http://bitealert-yzau.onrender.com',
   'http://10.0.2.2:3000',        // Android emulator
-  'http://10.0.2.2',             // Android emulator without port
-  'https://bitealert-frontend.onrender.com'
+  'http://10.0.2.2'             // Android emulator without port
+
 ];
 
 // Middleware

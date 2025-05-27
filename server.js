@@ -31,10 +31,11 @@ const allowedOrigins = [
   'ionic://localhost',
   'http://localhost:8080',
   'http://localhost:8100',
+  'https://bitealert-frontend.onrender.com',
   'https://bitealert-yzau.onrender.com',
   'http://bitealert-yzau.onrender.com',
   'http://10.0.2.2:3000',        // Android emulator
-  'http://10.0.2.2'              // Android emulator without port
+  'http://10.0.2.2'             // Android emulator without port
 ];
 
 // Middleware

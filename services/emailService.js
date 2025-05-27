@@ -44,8 +44,8 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     console.log('Token:', token);
 
     const verificationUrl = type === 'verification' 
-      ? `https://bitealert-jcqp.onrender.com/verify-email/${token}`
-      : `https://bitealert-jcqp.onrender.com/reset-password?token=${token}`;
+      ? `https://bitealert-yzau.onrender.com/verify-email/${token}`
+      : `https://bitealert-yzau.onrender.com/reset-password?token=${token}`;
     
     console.log('Verification URL:', verificationUrl);
 

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - Bite Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #FDF2DC;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+        .logo {
+            color: #7D0C0C;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .icon {
+            font-size: 4rem;
+            margin: 1rem 0;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .message {
+            margin: 1rem 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        .button {
+            display: inline-block;
+            background-color: #7D0C0C;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 1rem;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #5a0909;
+        }
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #7D0C0C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Bite Alert</div>
+        <div id="loading" class="loading"></div>
+        <div id="content" style="display: none;">
+            <div id="icon" class="icon"></div>
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        async function verifyEmail() {
+            const token = window.location.pathname.split('/').pop();
+            const apiUrl = window.location.origin + '/api/auth/verify-email/' + token;
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+                if (response.ok) {
+                    document.getElementById('icon').innerHTML = '✓';
+                    document.getElementById('icon').classList.add('success');
+                    document.getElementById('message').textContent = 'Email verified successfully! You can now close this window and return to the app.';
+                } else {
+                    document.getElementById('icon').innerHTML = '✕';
+                    document.getElementById('icon').classList.add('error');
+                    document.getElementById('message').textContent = data.message || 'Verification failed. Please try again.';
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                document.getElementById('icon').innerHTML = '✕';
+                document.getElementById('icon').classList.add('error');
+                document.getElementById('message').textContent = 'An error occurred. Please try again.';
+            }
+        }
+
+        // Start verification when page loads
+        window.onload = verifyEmail;
+    </script>
+</body>
+</html> 

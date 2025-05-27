@@ -9,6 +9,7 @@ const biteCaseRoutes = require('./routes/bite_cases');
 const vaccinationDateRoutes = require('./routes/vaccination_dates');
 const barangayRoutes = require('./routes/barangay');
 const vaccineStocksRouter = require('./routes/vaccine_stocks');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -27,7 +28,11 @@ const allowedOrigins = [
   'capacitor://localhost',
   'ionic://localhost',
   'http://localhost:8080',
-  'http://localhost:8100'
+  'http://localhost:8100',
+  'https://bitealert-jcqp.onrender.com',
+  'http://bitealert-jcqp.onrender.com',
+  'http://10.0.2.2:3000',  // Android emulator
+  'http://10.0.2.2'        // Android emulator without port
 ];
 
 // Middleware
@@ -37,9 +42,11 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('CORS blocked request from origin:', origin);
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }
+    console.log('CORS allowed request from origin:', origin);
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -49,6 +56,14 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Handle verify-email route
+app.get('/verify-email/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'verify-email.html'));
+});
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
@@ -154,10 +169,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0'; // Listen on all network interfaces
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://${HOST}:${PORT}`);
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Local: http://localhost:${PORT}`);
+  console.log(`Network: http://0.0.0.0:${PORT}`);
   console.log('Available routes:');
   console.log('- POST /api/auth/register');
   console.log('- POST /api/auth/login');

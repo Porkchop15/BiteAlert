@@ -47,7 +47,15 @@ const staffSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: [8, 'Password must be at least 8 characters long']
+    minlength: [8, 'Password must be at least 8 characters long'],
+    validate: {
+      validator: function(v) {
+        return /[A-Z]/.test(v) && // At least one uppercase letter
+               /[0-9]/.test(v) && // At least one number
+               /[!@#$%^&*(),.?":{}|<>]/.test(v); // At least one special character
+      },
+      message: 'Password must contain at least one uppercase letter, one number, and one special character (!@#$%^&*(),.?":{}|<>)'
+    }
   },
   role: {
     type: String,

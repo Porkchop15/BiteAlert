@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 const Patient = require('../models/Patient');
 const { generateVerificationToken, sendVerificationEmail } = require('../services/emailService');
+const path = require('path');
 
 // Debug route to check database contents
 router.get('/debug/users', async (req, res) => {
@@ -63,6 +64,14 @@ router.get('/debug/user/:email', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+// Temporary storage for OTPs (in production, use Redis or similar)
+const otpStore = new Map();
+
+// Generate a random 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 // Login route
 router.post('/login', async (req, res) => {
@@ -214,10 +223,9 @@ router.post('/login', async (req, res) => {
 // Register route
 router.post('/register', async (req, res) => {
   try {
-    console.log('=== REGISTRATION START ===');
-    const safeBody = { ...req.body, password: '[REDACTED]' };
-    console.log('Registration request received:', safeBody);
-    
+    console.log('=== REGISTRATION REQUEST ===');
+    console.log('Request body:', { ...req.body, password: '[REDACTED]' });
+
     const { 
       firstName, 
       middleName, 
@@ -226,27 +234,29 @@ router.post('/register', async (req, res) => {
       phone, 
       birthdate, 
       password, 
-      role
+      role 
     } = req.body;
-    
+
     // Validate required fields
     if (!firstName || !lastName || !email || !phone || !birthdate || !password || !role) {
+      console.log('Missing required fields');
       return res.status(400).json({ 
         message: 'Missing required fields',
         errors: ['All required fields must be filled out']
       });
     }
-    
+
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
     console.log('Normalized email:', normalizedEmail);
-    
+
     // Check both collections for existing email
     console.log('Checking for existing email in both collections...');
     const existingStaff = await Staff.findOne({ email: normalizedEmail });
     const existingPatient = await Patient.findOne({ email: normalizedEmail });
-    
+
     if (existingStaff || existingPatient) {
+      console.log('User already exists:', normalizedEmail);
       return res.status(400).json({ 
         message: 'Email already exists',
         errors: ['This email is already registered']
@@ -256,6 +266,7 @@ router.post('/register', async (req, res) => {
     // Generate verification token
     const verificationToken = generateVerificationToken();
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    console.log('Generated verification token with expiry:', tokenExpiry);
 
     // Create user based on role
     let user;
@@ -296,11 +307,12 @@ router.post('/register', async (req, res) => {
 
     // Send verification email
     try {
+      console.log('Attempting to send verification email...');
       await sendVerificationEmail(normalizedEmail, verificationToken);
       console.log('Verification email sent successfully');
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
-      // Don't fail registration if email fails
+      console.error('Failed to send verification email:', emailError);
+      // Don't prevent registration if email fails
     }
 
     return res.status(201).json({
@@ -312,7 +324,6 @@ router.post('/register', async (req, res) => {
         isVerified: user.isVerified
       }
     });
-
   } catch (error) {
     console.error('Registration error:', error);
     return res.status(500).json({ 
@@ -341,9 +352,12 @@ router.get('/verify-email/:token', async (req, res) => {
     const user = staff || patient;
     
     if (!user) {
-      return res.status(400).json({
-        message: 'Invalid or expired verification token'
-      });
+      if (req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.status(400).json({
+          message: 'Invalid or expired verification token'
+        });
+      }
+      return res.redirect('/verify-email.html');
     }
 
     // Update user verification status
@@ -352,16 +366,145 @@ router.get('/verify-email/:token', async (req, res) => {
     user.tokenExpiry = undefined;
     await user.save();
 
-    return res.json({
-      message: 'Email verified successfully'
-    });
-
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.json({
+        message: 'Email verified successfully'
+      });
+    }
+    
+    // Redirect to the HTML page for browser requests
+    return res.redirect('/verify-email.html');
   } catch (error) {
     console.error('Email verification error:', error);
-    return res.status(500).json({
-      message: 'Server error',
-      error: error.message
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.status(500).json({
+        message: 'Server error',
+        error: error.message
+      });
+    }
+    return res.redirect('/verify-email.html');
+  }
+});
+
+// Forgot password endpoint
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check both collections for the email
+    const staff = await Staff.findOne({ email: normalizedEmail });
+    const patient = await Patient.findOne({ email: normalizedEmail });
+
+    if (!staff && !patient) {
+      return res.status(404).json({ message: 'Email not found in either patient or staff records' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
+
+    // Store OTP
+    otpStore.set(normalizedEmail, {
+      otp,
+      expiry: otpExpiry,
+      type: staff ? 'staff' : 'patient'
     });
+
+    // Send OTP via email
+    try {
+      await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
+      return res.json({ message: 'OTP sent successfully' });
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      return res.status(500).json({ message: 'Error sending OTP' });
+    }
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Verify OTP endpoint
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const storedData = otpStore.get(normalizedEmail);
+    if (!storedData) {
+      return res.status(400).json({ message: 'No OTP found for this email' });
+    }
+
+    if (Date.now() > storedData.expiry) {
+      otpStore.delete(normalizedEmail);
+      return res.status(400).json({ message: 'OTP has expired' });
+    }
+
+    if (storedData.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    return res.json({ message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Reset password endpoint
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Validate password format
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ 
+        message: 'Invalid password format',
+        details: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // Check for required password components
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasUpperCase || !hasNumber || !hasSpecialChar) {
+      return res.status(400).json({ 
+        message: 'Invalid password format',
+        details: 'Password must contain at least one uppercase letter, one number, and one special character (!@#$%^&*(),.?":{}|<>)'
+      });
+    }
+
+    // Find user in both collections
+    const staff = await Staff.findOne({ email: normalizedEmail });
+    const patient = await Patient.findOne({ email: normalizedEmail });
+
+    if (!staff && !patient) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    // Update password in the appropriate collection
+    if (staff) {
+      staff.password = newPassword;
+      await staff.save();
+    } else {
+      patient.password = newPassword;
+      await patient.save();
+    }
+
+    return res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Invalid password format',
+        details: error.message
+      });
+    }
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

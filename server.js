@@ -25,14 +25,16 @@ const allowedOrigins = [
   'http://192.168.1.10:3000',
   'http://localhost',
   'http://192.168.1.10',
+  'http://localhost:52379',      // Flutter Web on Chrome
+  'http://127.0.0.1:52379',      // Flutter Web on Chrome (alternate)
   'capacitor://localhost',
   'ionic://localhost',
   'http://localhost:8080',
   'http://localhost:8100',
   'https://bitealert-yzau.onrender.com',
   'http://bitealert-yzau.onrender.com',
-  'http://10.0.2.2:3000',  // Android emulator
-  'http://10.0.2.2'        // Android emulator without port
+  'http://10.0.2.2:3000',        // Android emulator
+  'http://10.0.2.2'              // Android emulator without port
 ];
 
 // Middleware

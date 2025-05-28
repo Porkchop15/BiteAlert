@@ -21,8 +21,8 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = [
-  'https://bitealert-frontend.onrender.com',
-  'http://bitealert-frontend.onrender.com',
+  'https://bitealert-mobile.onrender.com',
+  'http://bitealert-mobile.onrender.com',
   'http://localhost:3000',
   'http://192.168.1.10:3000',
   'http://localhost',

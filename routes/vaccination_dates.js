@@ -72,7 +72,7 @@ router.put('/:id', async (req, res) => {
       d0Status: req.body.d0Status,
       d3Status: req.body.d3Status,
       d7Status: req.body.d7Status,
-      treatmentStatus: req.body.treatmentStatus || existingVaccinationDate.treatmentStatus
+      treatmentStatus: req.body.treatmentStatus // Always use the provided treatment status
     };
 
     // Only update d14Status and d28Status if they are explicitly provided
@@ -84,6 +84,7 @@ router.put('/:id', async (req, res) => {
     }
 
     console.log('Processed vaccination date data:', vaccinationDateData);
+    console.log('Treatment status being set to:', req.body.treatmentStatus);
     
     const updatedVaccinationDate = await VaccinationDate.findByIdAndUpdate(
       req.params.id,

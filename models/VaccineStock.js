@@ -1,11 +1,21 @@
 const mongoose = require('mongoose');
 
 const vaccineSchema = new mongoose.Schema({
-  name: { type: String, required: true }, // e.g., vaxirab, speeda, TCV, ERIG, Booster
-  type: { type: String, required: true }, // ARV, TCV, ERIG, Booster
-  brand: { type: String }, // Optional for TCV/ERIG/Booster
-  stock: { type: Number, required: true, default: 0 },
-  expirationDate: { type: Date, required: true } // Added expiration date field
+  name: { 
+    type: String, 
+    required: true,
+    enum: ['VAXIRAB', 'SPEEDA', 'Tetanus Toxoid-Containing Vaccine', 'Equine Rabies Immunoglobulin', 'Booster Vaccine']
+  }, // e.g., vaxirab, speeda, Tetanus Toxoid-Containing Vaccine, Equine Rabies Immunoglobulin, Booster Vaccine
+  type: { 
+    type: String, 
+    required: true,
+    enum: ['Anti-Rabies Vaccine', 'Tetanus Toxoid-Containing Vaccine', 'Equine Rabies Immunoglobulin', 'Booster Vaccine']
+  }, // ARV, TCV, ERIG, Booster
+  brand: { type: String, required: true }, // Optional for TCV/ERIG/Booster
+  stockEntries: [{
+    expirationDate: { type: String, required: true },
+    stock: { type: Number, required: true }
+  }]
 });
 
 const vaccineStockSchema = new mongoose.Schema({

@@ -38,20 +38,23 @@ const generateVerificationToken = () => {
 // Send verification email
 const sendVerificationEmail = async (email, token, type = 'verification') => {
   try {
-    console.log('=== SENDING VERIFICATION EMAIL ===');
+    console.log('=== SENDING EMAIL ===');
     console.log('To:', email);
     console.log('Type:', type);
     console.log('Token:', token);
 
-    const mailOptions = {
-      from: {
-        name: 'Bite Alert',
-        address: process.env.EMAIL_USER
-      },
-      to: email,
-      subject: type === 'verification' ? 'Bite Alert - Email Verification' : 'Password Reset Request',
-      html: type === 'verification' 
-        ? `
+    let mailOptions;
+    
+    if (type === 'verification') {
+      // Email verification template for registration
+      mailOptions = {
+        from: {
+          name: 'Bite Alert',
+          address: process.env.EMAIL_USER
+        },
+        to: email,
+        subject: 'Bite Alert - Email Verification',
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ffffff;">
             <div style="text-align: center; margin-bottom: 20px;">
               <h1 style="color: #7D0C0C; margin: 0; font-size: 24px;">Bite Alert</h1>
@@ -85,7 +88,17 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
             </div>
           </div>
         `
-        : `
+      };
+    } else if (type === 'password-reset') {
+      // OTP template for password reset
+      mailOptions = {
+        from: {
+          name: 'Bite Alert',
+          address: process.env.EMAIL_USER
+        },
+        to: email,
+        subject: 'Password Reset Request',
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ffffff;">
             <div style="text-align: center; margin-bottom: 20px;">
               <h1 style="color: #7D0C0C; margin: 0; font-size: 24px;">Bite Alert</h1>
@@ -118,7 +131,10 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
             </div>
           </div>
         `
-    };
+      };
+    } else {
+      throw new Error('Invalid email type');
+    }
 
     console.log('Sending email...');
     const info = await transporter.sendMail(mailOptions);
@@ -128,7 +144,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     console.error('=== EMAIL SENDING ERROR ===');
     console.error('Error details:', error);
     console.error('Stack trace:', error.stack);
-    throw new Error('Failed to send verification email: ' + error.message);
+    throw new Error('Failed to send email: ' + error.message);
   }
 };
 

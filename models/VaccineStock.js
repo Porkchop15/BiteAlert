@@ -4,7 +4,8 @@ const vaccineSchema = new mongoose.Schema({
   name: { type: String, required: true }, // e.g., vaxirab, speeda, TCV, ERIG, Booster
   type: { type: String, required: true }, // ARV, TCV, ERIG, Booster
   brand: { type: String }, // Optional for TCV/ERIG/Booster
-  stock: { type: Number, required: true, default: 0 }
+  stock: { type: Number, required: true, default: 0 },
+  expirationDate: { type: Date, required: true } // Added expiration date field
 });
 
 const vaccineStockSchema = new mongoose.Schema({

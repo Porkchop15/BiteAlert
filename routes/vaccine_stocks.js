@@ -2,13 +2,26 @@ const express = require('express');
 const router = express.Router();
 const VaccineStock = require('../models/VaccineStock');
 
+// Error handler middleware
+const handleError = (res, error, status = 500) => {
+  console.error('Vaccine Stock Error:', error);
+  res.status(status).json({
+    success: false,
+    message: error.message || 'An error occurred',
+    error: process.env.NODE_ENV === 'development' ? error : undefined
+  });
+};
+
 // Get all vaccine stocks
 router.get('/', async (req, res) => {
   try {
     const stocks = await VaccineStock.find();
-    res.json(stocks);
+    res.json({
+      success: true,
+      data: stocks
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 });
 
@@ -16,10 +29,18 @@ router.get('/', async (req, res) => {
 router.get('/:centerName', async (req, res) => {
   try {
     const stock = await VaccineStock.findOne({ centerName: req.params.centerName });
-    if (!stock) return res.status(404).json({ message: 'Center not found' });
-    res.json(stock);
+    if (!stock) {
+      return res.status(404).json({
+        success: false,
+        message: 'Center not found'
+      });
+    }
+    res.json({
+      success: true,
+      data: stock
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 });
 
@@ -29,18 +50,25 @@ router.post('/', async (req, res) => {
     const { centerName, vaccines } = req.body;
 
     if (!centerName) {
-      return res.status(400).json({ message: 'Center name is required' });
+      return res.status(400).json({
+        success: false,
+        message: 'Center name is required'
+      });
     }
 
     if (!Array.isArray(vaccines)) {
-      return res.status(400).json({ message: 'Vaccines must be an array' });
+      return res.status(400).json({
+        success: false,
+        message: 'Vaccines must be an array'
+      });
     }
 
     // Validate each vaccine entry
     for (const vaccine of vaccines) {
       if (!vaccine.name || !vaccine.type || !vaccine.brand) {
-        return res.status(400).json({ 
-          message: 'Each vaccine must have name, type, and brand' 
+        return res.status(400).json({
+          success: false,
+          message: 'Each vaccine must have name, type, and brand'
         });
       }
 
@@ -52,8 +80,9 @@ router.post('/', async (req, res) => {
       // Validate each stock entry
       for (const entry of vaccine.stockEntries) {
         if (!entry.expirationDate || typeof entry.stock !== 'number') {
-          return res.status(400).json({ 
-            message: 'Each stock entry must have expirationDate and stock' 
+          return res.status(400).json({
+            success: false,
+            message: 'Each stock entry must have expirationDate and stock'
           });
         }
       }
@@ -65,9 +94,12 @@ router.post('/', async (req, res) => {
     });
 
     const savedStock = await newStock.save();
-    res.status(201).json(savedStock);
+    res.status(201).json({
+      success: true,
+      data: savedStock
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    handleError(res, error, 400);
   }
 });
 
@@ -78,14 +110,18 @@ router.put('/:centerName', async (req, res) => {
     const { vaccines } = req.body;
 
     if (!Array.isArray(vaccines)) {
-      return res.status(400).json({ message: 'Vaccines must be an array' });
+      return res.status(400).json({
+        success: false,
+        message: 'Vaccines must be an array'
+      });
     }
 
     // Validate each vaccine entry
     for (const vaccine of vaccines) {
       if (!vaccine.name || !vaccine.type || !vaccine.brand) {
-        return res.status(400).json({ 
-          message: 'Each vaccine must have name, type, and brand' 
+        return res.status(400).json({
+          success: false,
+          message: 'Each vaccine must have name, type, and brand'
         });
       }
 
@@ -97,8 +133,9 @@ router.put('/:centerName', async (req, res) => {
       // Validate each stock entry
       for (const entry of vaccine.stockEntries) {
         if (!entry.expirationDate || typeof entry.stock !== 'number') {
-          return res.status(400).json({ 
-            message: 'Each stock entry must have expirationDate and stock' 
+          return res.status(400).json({
+            success: false,
+            message: 'Each stock entry must have expirationDate and stock'
           });
         }
       }
@@ -111,12 +148,18 @@ router.put('/:centerName', async (req, res) => {
     );
 
     if (!updatedStock) {
-      return res.status(404).json({ message: 'Center not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Center not found'
+      });
     }
 
-    res.json(updatedStock);
+    res.json({
+      success: true,
+      data: updatedStock
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    handleError(res, error, 400);
   }
 });
 
@@ -127,12 +170,18 @@ router.delete('/:centerName', async (req, res) => {
     const deletedStock = await VaccineStock.findOneAndDelete({ centerName });
     
     if (!deletedStock) {
-      return res.status(404).json({ message: 'Center not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Center not found'
+      });
     }
     
-    res.json({ message: 'Center deleted successfully' });
+    res.json({
+      success: true,
+      message: 'Center deleted successfully'
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 });
 

@@ -225,7 +225,7 @@ router.post('/register', async (req, res) => {
   try {
     console.log('=== REGISTRATION REQUEST ===');
     console.log('Request body:', { ...req.body, password: '[REDACTED]' });
-
+    
     const { 
       firstName, 
       middleName, 
@@ -234,9 +234,9 @@ router.post('/register', async (req, res) => {
       phone, 
       birthdate, 
       password, 
-      role 
+      role
     } = req.body;
-
+    
     // Validate required fields
     if (!firstName || !lastName || !email || !phone || !birthdate || !password || !role) {
       console.log('Missing required fields');
@@ -245,16 +245,16 @@ router.post('/register', async (req, res) => {
         errors: ['All required fields must be filled out']
       });
     }
-
+    
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
     console.log('Normalized email:', normalizedEmail);
-
+    
     // Check both collections for existing email
     console.log('Checking for existing email in both collections...');
     const existingStaff = await Staff.findOne({ email: normalizedEmail });
     const existingPatient = await Patient.findOne({ email: normalizedEmail });
-
+    
     if (existingStaff || existingPatient) {
       console.log('User already exists:', normalizedEmail);
       return res.status(400).json({ 
@@ -353,9 +353,9 @@ router.get('/verify-email/:token', async (req, res) => {
     
     if (!user) {
       if (req.headers.accept && req.headers.accept.includes('application/json')) {
-        return res.status(400).json({
-          message: 'Invalid or expired verification token'
-        });
+      return res.status(400).json({
+        message: 'Invalid or expired verification token'
+      });
       }
       return res.redirect('/verify-email.html');
     }
@@ -367,20 +367,20 @@ router.get('/verify-email/:token', async (req, res) => {
     await user.save();
 
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.json({
-        message: 'Email verified successfully'
-      });
+    return res.json({
+      message: 'Email verified successfully'
+    });
     }
-    
+
     // Redirect to the HTML page for browser requests
     return res.redirect('/verify-email.html');
   } catch (error) {
     console.error('Email verification error:', error);
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.status(500).json({
-        message: 'Server error',
-        error: error.message
-      });
+    return res.status(500).json({
+      message: 'Server error',
+      error: error.message
+    });
     }
     return res.redirect('/verify-email.html');
   }
@@ -392,17 +392,24 @@ router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
+    console.log('=== FORGOT PASSWORD REQUEST ===');
+    console.log('Email:', normalizedEmail);
+
     // Check both collections for the email
     const staff = await Staff.findOne({ email: normalizedEmail });
     const patient = await Patient.findOne({ email: normalizedEmail });
 
     if (!staff && !patient) {
+      console.log('Email not found in database');
       return res.status(404).json({ message: 'Email not found in either patient or staff records' });
     }
 
     // Generate OTP
     const otp = generateOTP();
     const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
+
+    console.log('Generated OTP:', otp);
+    console.log('OTP Expiry:', new Date(otpExpiry));
 
     // Store OTP
     otpStore.set(normalizedEmail, {
@@ -411,9 +418,13 @@ router.post('/forgot-password', async (req, res) => {
       type: staff ? 'staff' : 'patient'
     });
 
+    console.log('OTP stored successfully');
+    console.log('Current OTP store contents:', Array.from(otpStore.entries()));
+
     // Send OTP via email
     try {
       await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
+      console.log('OTP email sent successfully');
       return res.json({ message: 'OTP sent successfully' });
     } catch (error) {
       console.error('Error sending OTP:', error);
@@ -431,20 +442,32 @@ router.post('/verify-otp', async (req, res) => {
     const { email, otp } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
+    console.log('=== OTP VERIFICATION ATTEMPT ===');
+    console.log('Email:', normalizedEmail);
+    console.log('Received OTP:', otp);
+    console.log('OTP Store contents:', Array.from(otpStore.entries()));
+
     const storedData = otpStore.get(normalizedEmail);
+    console.log('Stored data for email:', storedData);
+
     if (!storedData) {
+      console.log('No OTP found for this email');
       return res.status(400).json({ message: 'No OTP found for this email' });
     }
 
     if (Date.now() > storedData.expiry) {
+      console.log('OTP expired. Current time:', Date.now(), 'Expiry:', storedData.expiry);
       otpStore.delete(normalizedEmail);
       return res.status(400).json({ message: 'OTP has expired' });
     }
 
+    console.log('Comparing OTPs - Received:', otp, 'Stored:', storedData.otp);
     if (storedData.otp !== otp) {
+      console.log('OTP mismatch');
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
+    console.log('OTP verified successfully');
     return res.json({ message: 'OTP verified successfully' });
   } catch (error) {
     console.error('OTP verification error:', error);

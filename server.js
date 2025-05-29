@@ -27,8 +27,8 @@ const allowedOrigins = [
   'http://192.168.1.10:3000',
   'http://localhost',
   'http://192.168.1.10',
-  'http://localhost:59150',      // Flutter Web on Chrome
-  'http://127.0.0.1:59150',      // Flutter Web on Chrome (alternate)
+  'http://localhost:60868',      // Flutter Web on Chrome
+  'http://127.0.0.1:60868',      // Flutter Web on Chrome (alternate)
   'capacitor://localhost',
   'ionic://localhost',
   'http://localhost:8080',

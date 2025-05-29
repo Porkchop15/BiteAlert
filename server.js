@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -27,8 +27,8 @@ const allowedOrigins = [
   'http://192.168.1.10:3000',
   'http://localhost',
   'http://192.168.1.10',
-  'http://localhost:60779',      // Flutter Web on Chrome
-  'http://127.0.0.1:60779',      // Flutter Web on Chrome (alternate)
+  'http://localhost:54143',      // Flutter Web on Chrome
+  'http://127.0.0.1:54143',      // Flutter Web on Chrome (alternate)
   'capacitor://localhost',
   'ionic://localhost',
   'http://localhost:8080',

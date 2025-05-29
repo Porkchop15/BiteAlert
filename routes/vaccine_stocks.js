@@ -26,6 +26,37 @@ router.get('/:centerName', async (req, res) => {
 // Create new vaccine stock entry
 router.post('/', async (req, res) => {
   try {
+    // Validate required fields
+    if (!req.body.centerName) {
+      return res.status(400).json({ message: 'Center name is required' });
+    }
+
+    // Validate vaccines array
+    if (!Array.isArray(req.body.vaccines)) {
+      return res.status(400).json({ message: 'Vaccines must be an array' });
+    }
+
+    // Validate each vaccine entry
+    for (const vaccine of req.body.vaccines) {
+      if (!vaccine.name || !vaccine.type || !vaccine.stock || !vaccine.expirationDate) {
+        return res.status(400).json({ 
+          message: 'Each vaccine must have name, type, stock, and expiration date' 
+        });
+      }
+
+      // Validate expiration date format (MM/DD/YYYY)
+      const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+      if (!dateRegex.test(vaccine.expirationDate)) {
+        return res.status(400).json({ 
+          message: 'Invalid expiration date format. Use MM/DD/YYYY' 
+        });
+      }
+
+      // Convert expiration date to Date object
+      const [month, day, year] = vaccine.expirationDate.split('/');
+      vaccine.expirationDate = new Date(year, month - 1, day);
+    }
+
     const newStock = new VaccineStock(req.body);
     const saved = await newStock.save();
     res.status(201).json(saved);
@@ -37,6 +68,37 @@ router.post('/', async (req, res) => {
 // Update vaccine stock by center name
 router.put('/:centerName', async (req, res) => {
   try {
+    // Validate required fields
+    if (!req.body.centerName) {
+      return res.status(400).json({ message: 'Center name is required' });
+    }
+
+    // Validate vaccines array
+    if (!Array.isArray(req.body.vaccines)) {
+      return res.status(400).json({ message: 'Vaccines must be an array' });
+    }
+
+    // Validate each vaccine entry
+    for (const vaccine of req.body.vaccines) {
+      if (!vaccine.name || !vaccine.type || !vaccine.stock || !vaccine.expirationDate) {
+        return res.status(400).json({ 
+          message: 'Each vaccine must have name, type, stock, and expiration date' 
+        });
+      }
+
+      // Validate expiration date format (MM/DD/YYYY)
+      const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+      if (!dateRegex.test(vaccine.expirationDate)) {
+        return res.status(400).json({ 
+          message: 'Invalid expiration date format. Use MM/DD/YYYY' 
+        });
+      }
+
+      // Convert expiration date to Date object
+      const [month, day, year] = vaccine.expirationDate.split('/');
+      vaccine.expirationDate = new Date(year, month - 1, day);
+    }
+
     const updated = await VaccineStock.findOneAndUpdate(
       { centerName: req.params.centerName },
       req.body,

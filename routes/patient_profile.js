@@ -11,7 +11,8 @@ router.get('/', async (req, res) => {
       firstName: 1,
       middleName: 1,
       lastName: 1,
-      patientId: 1
+      patientId: 1,
+      barangay: 1 // <-- add this
     });
     
     console.log('Number of patients found:', patients.length);
@@ -20,7 +21,8 @@ router.get('/', async (req, res) => {
       id: patient.patientId,
       firstName: patient.firstName,
       middleName: patient.middleName || '',
-      lastName: patient.lastName
+      lastName: patient.lastName,
+      barangay: patient.barangay || '' // <-- add this
     }));
     
     console.log('Formatted patients:', formattedPatients);

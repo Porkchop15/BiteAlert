@@ -68,7 +68,6 @@ router.get('/:id', async (req, res) => {
       religion: patient.religion || '',
       occupation: patient.occupation || '',
       nationality: patient.nationality || '',
-      weight: patient.weight || '',
       civilStatus: patient.civilStatus || '',
       sex: patient.sex || '',
       createdAt: patient.createdAt,
@@ -104,7 +103,7 @@ router.put('/:id', async (req, res) => {
       'firstName', 'middleName', 'lastName', 'phone',
       'houseNo', 'street', 'barangay', 'subdivision',
       'city', 'province', 'zipCode', 'birthPlace',
-      'religion', 'occupation', 'nationality', 'weight',
+      'religion', 'occupation', 'nationality',
       'civilStatus', 'sex'
     ];
 
@@ -141,7 +140,6 @@ router.put('/:id', async (req, res) => {
       religion: patient.religion || '',
       occupation: patient.occupation || '',
       nationality: patient.nationality || '',
-      weight: patient.weight || '',
       civilStatus: patient.civilStatus || '',
       sex: patient.sex || '',
       createdAt: patient.createdAt,

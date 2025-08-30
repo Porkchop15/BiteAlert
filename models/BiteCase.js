@@ -114,48 +114,59 @@ const biteCaseSchema = new mongoose.Schema({
   },
   typeOfProphylaxis: {
     type: String,
-    required: true,
+    required: false,
+    default: 'Post-exposure',
     enum: ['Pre-exposure', 'Post-exposure']
   },
   exposureDate: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   exposurePlace: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   exposureType: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   exposureSource: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   exposureCategory: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   washingWound: {
     type: Boolean,
-    required: true
+    required: false,
+    default: false
   },
   rig: {
     type: Boolean,
-    required: true
+    required: false,
+    default: false
   },
   genericName: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   brandName: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   route: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   lastArn: {
     type: String

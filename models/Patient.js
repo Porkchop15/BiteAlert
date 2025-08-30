@@ -123,11 +123,6 @@ const patientSchema = new mongoose.Schema({
     default: '',
     trim: true
   },
-  weight: {
-    type: String,
-    default: '',
-    trim: true
-  },
   civilStatus: {
     type: String,
     default: '',

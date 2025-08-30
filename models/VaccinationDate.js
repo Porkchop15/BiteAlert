@@ -40,23 +40,23 @@ const vaccinationDateSchema = new mongoose.Schema({
   },
   d3Status: {
     type: String,
-    enum: ['pending', 'completed', 'missed', 'optional'],
+    enum: ['pending', 'completed', 'missed'],
     default: 'pending'
   },
   d7Status: {
     type: String,
-    enum: ['pending', 'completed', 'missed', 'optional'],
+    enum: ['pending', 'completed', 'missed'],
     default: 'pending'
   },
   d14Status: {
     type: String,
-    enum: ['pending', 'completed', 'missed', 'optional'],
-    default: 'optional'
+    enum: ['pending', 'completed', 'missed'],
+    default: 'pending'
   },
   d28Status: {
     type: String,
-    enum: ['pending', 'completed', 'missed', 'optional'],
-    default: 'optional'
+    enum: ['pending', 'completed', 'missed'],
+    default: 'pending'
   },
   treatmentStatus: {
     type: String,

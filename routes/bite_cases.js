@@ -73,40 +73,43 @@ router.post('/', async (req, res) => {
     if (req.body.circumstanceUnprovoked) circumstanceOfBite.push('Unprovoked');
     processedBody.circumstanceOfBite = circumstanceOfBite;
     
-    // Animal Profile - Species
-    const species = [];
-    if (req.body.animalDog) species.push('Dog');
-    if (req.body.animalCat) species.push('Cat');
-    if (req.body.animalOthers) species.push('Others');
-    processedBody.species = species;
+    // Animal Profile - Nested Object
+    const animalProfile = {
+      species: []
+    };
+    if (req.body.animalDog) animalProfile.species.push('Dog');
+    if (req.body.animalCat) animalProfile.species.push('Cat');
+    if (req.body.animalOthers) animalProfile.species.push('Others');
     
     // Animal Profile - Clinical Status
-    const clinicalStatus = [];
-    if (req.body.animalHealthy) clinicalStatus.push('Healthy');
-    if (req.body.animalSick) clinicalStatus.push('Sick');
-    if (req.body.animalDied) clinicalStatus.push('Died');
-    if (req.body.animalKilled) clinicalStatus.push('Killed');
-    processedBody.clinicalStatus = clinicalStatus;
+    animalProfile.clinicalStatus = [];
+    if (req.body.animalHealthy) animalProfile.clinicalStatus.push('Healthy');
+    if (req.body.animalSick) animalProfile.clinicalStatus.push('Sick');
+    if (req.body.animalDied) animalProfile.clinicalStatus.push('Died');
+    if (req.body.animalKilled) animalProfile.clinicalStatus.push('Killed');
     
     // Animal Profile - Brain Exam
-    const brainExam = [];
-    if (req.body.animalBrainExamDone) brainExam.push('Brain exam done');
-    if (req.body.animalNoBrainExam) brainExam.push('No Brain Exam Done');
-    if (req.body.animalUnknown) brainExam.push('Unknown');
-    processedBody.brainExam = brainExam;
+    animalProfile.brainExam = [];
+    if (req.body.animalBrainExamDone) animalProfile.brainExam.push('Brain Exam Done');
+    if (req.body.animalNoBrainExam) animalProfile.brainExam.push('No Brain Exam');
+    if (req.body.animalUnknown) animalProfile.brainExam.push('Unknown');
     
     // Animal Profile - Vaccination Status
-    const vaccinationStatus = [];
-    if (req.body.animalImmunized) vaccinationStatus.push('Immunized');
-    if (req.body.animalNotImmunized) vaccinationStatus.push('Not Immunized');
-    processedBody.vaccinationStatus = vaccinationStatus;
+    animalProfile.vaccinationStatus = [];
+    if (req.body.animalImmunized) animalProfile.vaccinationStatus.push('Immunized');
+    if (req.body.animalNotImmunized) animalProfile.vaccinationStatus.push('Not Immunized');
     
     // Animal Profile - Ownership
-    const ownership = [];
-    if (req.body.animalPet) ownership.push('Pet');
-    if (req.body.animalNeighbor) ownership.push('Neighbor');
-    if (req.body.animalStray) ownership.push('Stray');
-    processedBody.ownership = ownership;
+    animalProfile.ownership = [];
+    if (req.body.animalPet) animalProfile.ownership.push('Pet');
+    if (req.body.animalNeighbor) animalProfile.ownership.push('Neighbor');
+    if (req.body.animalStray) animalProfile.ownership.push('Stray');
+    
+    // Add other animal profile fields
+    animalProfile.othersSpecify = req.body.animalOthersSpecify || '';
+    animalProfile.vaccinationDate = req.body.animalVaccinationDate || '';
+    
+    processedBody.animalProfile = animalProfile;
     
     // Patient Immunization - Nested Object
     const patientImmunization = {
@@ -262,40 +265,43 @@ router.put('/:id', async (req, res) => {
     if (req.body.circumstanceUnprovoked) circumstanceOfBite.push('Unprovoked');
     processedBody.circumstanceOfBite = circumstanceOfBite;
     
-    // Animal Profile - Species
-    const species = [];
-    if (req.body.animalDog) species.push('Dog');
-    if (req.body.animalCat) species.push('Cat');
-    if (req.body.animalOthers) species.push('Others');
-    processedBody.species = species;
+    // Animal Profile - Nested Object
+    const animalProfile = {
+      species: []
+    };
+    if (req.body.animalDog) animalProfile.species.push('Dog');
+    if (req.body.animalCat) animalProfile.species.push('Cat');
+    if (req.body.animalOthers) animalProfile.species.push('Others');
     
     // Animal Profile - Clinical Status
-    const clinicalStatus = [];
-    if (req.body.animalHealthy) clinicalStatus.push('Healthy');
-    if (req.body.animalSick) clinicalStatus.push('Sick');
-    if (req.body.animalDied) clinicalStatus.push('Died');
-    if (req.body.animalKilled) clinicalStatus.push('Killed');
-    processedBody.clinicalStatus = clinicalStatus;
+    animalProfile.clinicalStatus = [];
+    if (req.body.animalHealthy) animalProfile.clinicalStatus.push('Healthy');
+    if (req.body.animalSick) animalProfile.clinicalStatus.push('Sick');
+    if (req.body.animalDied) animalProfile.clinicalStatus.push('Died');
+    if (req.body.animalKilled) animalProfile.clinicalStatus.push('Killed');
     
     // Animal Profile - Brain Exam
-    const brainExam = [];
-    if (req.body.animalBrainExamDone) brainExam.push('Brain exam done');
-    if (req.body.animalNoBrainExam) brainExam.push('No Brain Exam Done');
-    if (req.body.animalUnknown) brainExam.push('Unknown');
-    processedBody.brainExam = brainExam;
+    animalProfile.brainExam = [];
+    if (req.body.animalBrainExamDone) animalProfile.brainExam.push('Brain Exam Done');
+    if (req.body.animalNoBrainExam) animalProfile.brainExam.push('No Brain Exam');
+    if (req.body.animalUnknown) animalProfile.brainExam.push('Unknown');
     
     // Animal Profile - Vaccination Status
-    const vaccinationStatus = [];
-    if (req.body.animalImmunized) vaccinationStatus.push('Immunized');
-    if (req.body.animalNotImmunized) vaccinationStatus.push('Not Immunized');
-    processedBody.vaccinationStatus = vaccinationStatus;
+    animalProfile.vaccinationStatus = [];
+    if (req.body.animalImmunized) animalProfile.vaccinationStatus.push('Immunized');
+    if (req.body.animalNotImmunized) animalProfile.vaccinationStatus.push('Not Immunized');
     
     // Animal Profile - Ownership
-    const ownership = [];
-    if (req.body.animalPet) ownership.push('Pet');
-    if (req.body.animalNeighbor) ownership.push('Neighbor');
-    if (req.body.animalStray) ownership.push('Stray');
-    processedBody.ownership = ownership;
+    animalProfile.ownership = [];
+    if (req.body.animalPet) animalProfile.ownership.push('Pet');
+    if (req.body.animalNeighbor) animalProfile.ownership.push('Neighbor');
+    if (req.body.animalStray) animalProfile.ownership.push('Stray');
+    
+    // Add other animal profile fields
+    animalProfile.othersSpecify = req.body.animalOthersSpecify || '';
+    animalProfile.vaccinationDate = req.body.animalVaccinationDate || '';
+    
+    processedBody.animalProfile = animalProfile;
     
     // Patient Immunization - Nested Object
     const patientImmunization = {

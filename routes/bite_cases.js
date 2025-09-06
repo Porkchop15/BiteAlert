@@ -108,55 +108,80 @@ router.post('/', async (req, res) => {
     if (req.body.animalStray) ownership.push('Stray');
     processedBody.ownership = ownership;
     
-    // Patient Immunization - DPT
-    const dpt = [];
-    if (req.body.dptComplete) dpt.push('Complete');
-    if (req.body.dptIncomplete) dpt.push('Incomplete');
-    if (req.body.dptNone) dpt.push('None');
-    processedBody.dpt = dpt;
+    // Patient Immunization - Nested Object
+    const patientImmunization = {
+      dpt: []
+    };
+    if (req.body.dptComplete) patientImmunization.dpt.push('Complete');
+    if (req.body.dptIncomplete) patientImmunization.dpt.push('Incomplete');
+    if (req.body.dptNone) patientImmunization.dpt.push('None');
     
-    // Patient Immunization - TT
-    const tt = [];
-    if (req.body.ttActive) tt.push('Active');
-    if (req.body.ttPassive) tt.push('Passive');
-    processedBody.tt = tt;
+    // Patient Immunization - TT (nested object)
+    patientImmunization.tt = [];
+    if (req.body.ttActive) patientImmunization.tt.push('Active');
+    if (req.body.ttPassive) patientImmunization.tt.push('Passive');
     
     // Patient Immunization - TT Dates
-    const ttDates = [];
-    if (req.body.tt1Date) ttDates.push(req.body.tt1Date);
-    if (req.body.tt2Date) ttDates.push(req.body.tt2Date);
-    if (req.body.tt3Date) ttDates.push(req.body.tt3Date);
-    processedBody.ttDates = ttDates;
+    patientImmunization.ttDates = [];
+    if (req.body.tt1Date) patientImmunization.ttDates.push(req.body.tt1Date);
+    if (req.body.tt2Date) patientImmunization.ttDates.push(req.body.tt2Date);
+    if (req.body.tt3Date) patientImmunization.ttDates.push(req.body.tt3Date);
     
-    // Current Immunization - Type
-    const type = [];
-    if (req.body.currentActive) type.push('Active');
-    if (req.body.currentPostExposure) type.push('Post-exposure');
-    if (req.body.currentPreExposure) type.push('Pre-exposure');
-    if (req.body.currentPreviouslyImmunized) type.push('Previously Immunized');
-    processedBody.type = type;
+    // Add other patient immunization fields
+    patientImmunization.dptYearGiven = req.body.dptYearGiven || '';
+    patientImmunization.dptDosesGiven = req.body.dptDosesGiven || '';
+    patientImmunization.skinTest = req.body.skinTest || false;
+    patientImmunization.skinTestTime = req.body.skinTestTime || '';
+    patientImmunization.skinTestReadTime = req.body.skinTestReadTime || '';
+    patientImmunization.skinTestResult = req.body.skinTestResult || '';
+    patientImmunization.tig = req.body.tig || false;
+    patientImmunization.tigDose = req.body.tigDose || '';
+    patientImmunization.tigDate = req.body.tigDate || '';
+    
+    processedBody.patientImmunization = patientImmunization;
+    
+    // Current Immunization - Nested Object
+    const currentImmunization = {
+      type: []
+    };
+    if (req.body.currentActive) currentImmunization.type.push('Active');
+    if (req.body.currentPostExposure) currentImmunization.type.push('Post-exposure');
+    if (req.body.currentPreExposure) currentImmunization.type.push('Pre-exposure');
+    if (req.body.currentPreviouslyImmunized) currentImmunization.type.push('Previously Immunized');
     
     // Current Immunization - Vaccine
-    const vaccine = [];
-    if (req.body.currentPvrv) vaccine.push('PVRV');
-    if (req.body.currentPcec) vaccine.push('PCEC');
-    if (req.body.currentId) vaccine.push('ID');
-    if (req.body.currentIm) vaccine.push('IM');
-    processedBody.vaccine = vaccine;
+    currentImmunization.vaccine = [];
+    if (req.body.currentPvrv) currentImmunization.vaccine.push('PVRV');
+    if (req.body.currentPcec) currentImmunization.vaccine.push('PCEC');
+    if (req.body.currentId) currentImmunization.vaccine.push('ID');
+    if (req.body.currentIm) currentImmunization.vaccine.push('IM');
     
     // Current Immunization - Route
-    const route = [];
-    if (req.body.currentPassive) route.push('Passive');
-    if (req.body.currentSkinTest) route.push('Skin test');
-    if (req.body.currentHrig) route.push('HRIG');
-    if (req.body.currentLocalInfiltration) route.push('Local Infiltration');
-    processedBody.route = route;
+    currentImmunization.route = [];
+    if (req.body.currentPassive) currentImmunization.route.push('Passive');
+    if (req.body.currentSkinTest) currentImmunization.route.push('Skin test');
+    if (req.body.currentHrig) currentImmunization.route.push('HRIG');
+    if (req.body.currentLocalInfiltration) currentImmunization.route.push('Local Infiltration');
     
     // Current Immunization - Schedule
-    const schedule = [];
-    if (req.body.currentStructured) schedule.push('Structured');
-    if (req.body.currentUnstructured) schedule.push('Unstructured');
-    processedBody.schedule = schedule;
+    currentImmunization.schedule = [];
+    if (req.body.currentStructured) currentImmunization.schedule.push('Structured');
+    if (req.body.currentUnstructured) currentImmunization.schedule.push('Unstructured');
+    
+    // Add other current immunization fields
+    currentImmunization.passive = req.body.currentPassive || false;
+    currentImmunization.skinTest = req.body.currentSkinTest || false;
+    currentImmunization.skinTestTime = req.body.currentSkinTestTime || '';
+    currentImmunization.skinTestReadTime = req.body.currentSkinTestReadTime || '';
+    currentImmunization.skinTestResult = req.body.currentSkinTestResult || '';
+    currentImmunization.hrig = req.body.currentHrig || false;
+    currentImmunization.hrigDose = req.body.hrigDose || '';
+    currentImmunization.hrigDate = req.body.hrigDate || '';
+    currentImmunization.localInfiltration = req.body.currentLocalInfiltration || false;
+    currentImmunization.medicineUsed = req.body.medicineUsed || '';
+    currentImmunization.branchNo = req.body.branchNo || '';
+    
+    processedBody.currentImmunization = currentImmunization;
     
     const biteCase = new BiteCase(processedBody);
     const savedBiteCase = await biteCase.save();
@@ -276,55 +301,80 @@ router.put('/:id', async (req, res) => {
     if (req.body.animalStray) ownership.push('Stray');
     processedBody.ownership = ownership;
     
-    // Patient Immunization - DPT
-    const dpt = [];
-    if (req.body.dptComplete) dpt.push('Complete');
-    if (req.body.dptIncomplete) dpt.push('Incomplete');
-    if (req.body.dptNone) dpt.push('None');
-    processedBody.dpt = dpt;
+    // Patient Immunization - Nested Object
+    const patientImmunization = {
+      dpt: []
+    };
+    if (req.body.dptComplete) patientImmunization.dpt.push('Complete');
+    if (req.body.dptIncomplete) patientImmunization.dpt.push('Incomplete');
+    if (req.body.dptNone) patientImmunization.dpt.push('None');
     
-    // Patient Immunization - TT
-    const tt = [];
-    if (req.body.ttActive) tt.push('Active');
-    if (req.body.ttPassive) tt.push('Passive');
-    processedBody.tt = tt;
+    // Patient Immunization - TT (nested object)
+    patientImmunization.tt = [];
+    if (req.body.ttActive) patientImmunization.tt.push('Active');
+    if (req.body.ttPassive) patientImmunization.tt.push('Passive');
     
     // Patient Immunization - TT Dates
-    const ttDates = [];
-    if (req.body.tt1Date) ttDates.push(req.body.tt1Date);
-    if (req.body.tt2Date) ttDates.push(req.body.tt2Date);
-    if (req.body.tt3Date) ttDates.push(req.body.tt3Date);
-    processedBody.ttDates = ttDates;
+    patientImmunization.ttDates = [];
+    if (req.body.tt1Date) patientImmunization.ttDates.push(req.body.tt1Date);
+    if (req.body.tt2Date) patientImmunization.ttDates.push(req.body.tt2Date);
+    if (req.body.tt3Date) patientImmunization.ttDates.push(req.body.tt3Date);
     
-    // Current Immunization - Type
-    const type = [];
-    if (req.body.currentActive) type.push('Active');
-    if (req.body.currentPostExposure) type.push('Post-exposure');
-    if (req.body.currentPreExposure) type.push('Pre-exposure');
-    if (req.body.currentPreviouslyImmunized) type.push('Previously Immunized');
-    processedBody.type = type;
+    // Add other patient immunization fields
+    patientImmunization.dptYearGiven = req.body.dptYearGiven || '';
+    patientImmunization.dptDosesGiven = req.body.dptDosesGiven || '';
+    patientImmunization.skinTest = req.body.skinTest || false;
+    patientImmunization.skinTestTime = req.body.skinTestTime || '';
+    patientImmunization.skinTestReadTime = req.body.skinTestReadTime || '';
+    patientImmunization.skinTestResult = req.body.skinTestResult || '';
+    patientImmunization.tig = req.body.tig || false;
+    patientImmunization.tigDose = req.body.tigDose || '';
+    patientImmunization.tigDate = req.body.tigDate || '';
+    
+    processedBody.patientImmunization = patientImmunization;
+    
+    // Current Immunization - Nested Object
+    const currentImmunization = {
+      type: []
+    };
+    if (req.body.currentActive) currentImmunization.type.push('Active');
+    if (req.body.currentPostExposure) currentImmunization.type.push('Post-exposure');
+    if (req.body.currentPreExposure) currentImmunization.type.push('Pre-exposure');
+    if (req.body.currentPreviouslyImmunized) currentImmunization.type.push('Previously Immunized');
     
     // Current Immunization - Vaccine
-    const vaccine = [];
-    if (req.body.currentPvrv) vaccine.push('PVRV');
-    if (req.body.currentPcec) vaccine.push('PCEC');
-    if (req.body.currentId) vaccine.push('ID');
-    if (req.body.currentIm) vaccine.push('IM');
-    processedBody.vaccine = vaccine;
+    currentImmunization.vaccine = [];
+    if (req.body.currentPvrv) currentImmunization.vaccine.push('PVRV');
+    if (req.body.currentPcec) currentImmunization.vaccine.push('PCEC');
+    if (req.body.currentId) currentImmunization.vaccine.push('ID');
+    if (req.body.currentIm) currentImmunization.vaccine.push('IM');
     
     // Current Immunization - Route
-    const route = [];
-    if (req.body.currentPassive) route.push('Passive');
-    if (req.body.currentSkinTest) route.push('Skin test');
-    if (req.body.currentHrig) route.push('HRIG');
-    if (req.body.currentLocalInfiltration) route.push('Local Infiltration');
-    processedBody.route = route;
+    currentImmunization.route = [];
+    if (req.body.currentPassive) currentImmunization.route.push('Passive');
+    if (req.body.currentSkinTest) currentImmunization.route.push('Skin test');
+    if (req.body.currentHrig) currentImmunization.route.push('HRIG');
+    if (req.body.currentLocalInfiltration) currentImmunization.route.push('Local Infiltration');
     
     // Current Immunization - Schedule
-    const schedule = [];
-    if (req.body.currentStructured) schedule.push('Structured');
-    if (req.body.currentUnstructured) schedule.push('Unstructured');
-    processedBody.schedule = schedule;
+    currentImmunization.schedule = [];
+    if (req.body.currentStructured) currentImmunization.schedule.push('Structured');
+    if (req.body.currentUnstructured) currentImmunization.schedule.push('Unstructured');
+    
+    // Add other current immunization fields
+    currentImmunization.passive = req.body.currentPassive || false;
+    currentImmunization.skinTest = req.body.currentSkinTest || false;
+    currentImmunization.skinTestTime = req.body.currentSkinTestTime || '';
+    currentImmunization.skinTestReadTime = req.body.currentSkinTestReadTime || '';
+    currentImmunization.skinTestResult = req.body.currentSkinTestResult || '';
+    currentImmunization.hrig = req.body.currentHrig || false;
+    currentImmunization.hrigDose = req.body.hrigDose || '';
+    currentImmunization.hrigDate = req.body.hrigDate || '';
+    currentImmunization.localInfiltration = req.body.currentLocalInfiltration || false;
+    currentImmunization.medicineUsed = req.body.medicineUsed || '';
+    currentImmunization.branchNo = req.body.branchNo || '';
+    
+    processedBody.currentImmunization = currentImmunization;
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,
@@ -399,4 +449,4 @@ router.get('/registration/:registrationNumber', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

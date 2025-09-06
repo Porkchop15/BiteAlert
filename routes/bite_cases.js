@@ -173,6 +173,7 @@ router.put('/:id', async (req, res) => {
       philhealthNo: req.body.philhealthNo || ''
     };
     console.log('Backend processed philhealthNo:', processedBody.philhealthNo);
+    console.log('Backend received management:', req.body.management);
     
     // Use array data directly from frontend
     // Type of Exposure - Use array data directly
@@ -250,6 +251,7 @@ router.put('/:id', async (req, res) => {
 
     console.log('Bite case updated successfully:', updatedBiteCase);
     console.log('Returned philhealthNo:', updatedBiteCase.philhealthNo);
+    console.log('Returned management:', updatedBiteCase.management);
     res.json(updatedBiteCase);
   } catch (error) {
     console.error('Error updating bite case:', error);

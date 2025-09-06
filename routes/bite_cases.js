@@ -29,38 +29,50 @@ router.post('/', async (req, res) => {
       middleName: req.body.middleName || ''
     };
     
-    // Convert boolean fields to arrays
+    // Use array data from frontend if available, otherwise convert boolean fields to arrays
     // Type of Exposure
-    const typeOfExposure = [];
-    if (req.body.typeNonBite) typeOfExposure.push('NON-BITE');
-    if (req.body.typeBite) typeOfExposure.push('BITE');
-    processedBody.typeOfExposure = typeOfExposure;
+    if (req.body.typeOfExposure && req.body.typeOfExposure.length > 0) {
+      processedBody.typeOfExposure = req.body.typeOfExposure;
+    } else {
+      const typeOfExposure = [];
+      if (req.body.typeNonBite) typeOfExposure.push('NON-BITE');
+      if (req.body.typeBite) typeOfExposure.push('BITE');
+      processedBody.typeOfExposure = typeOfExposure;
+    }
     
     // Site of Bite
-    const siteOfBite = [];
-    if (req.body.headBite) siteOfBite.push('Head');
-    if (req.body.faceBite) siteOfBite.push('Face');
-    if (req.body.neckBite) siteOfBite.push('Neck');
-    if (req.body.chestBite) siteOfBite.push('Chest');
-    if (req.body.backBite) siteOfBite.push('Back');
-    if (req.body.abdomenBite) siteOfBite.push('Abdomen');
-    if (req.body.upperExtremitiesBite) siteOfBite.push('Upper Extremities');
-    if (req.body.lowerExtremitiesBite) siteOfBite.push('Lower Extremities');
-    if (req.body.othersBite) siteOfBite.push('Others');
-    processedBody.siteOfBite = siteOfBite;
+    if (req.body.siteOfBite && req.body.siteOfBite.length > 0) {
+      processedBody.siteOfBite = req.body.siteOfBite;
+    } else {
+      const siteOfBite = [];
+      if (req.body.headBite) siteOfBite.push('Head');
+      if (req.body.faceBite) siteOfBite.push('Face');
+      if (req.body.neckBite) siteOfBite.push('Neck');
+      if (req.body.chestBite) siteOfBite.push('Chest');
+      if (req.body.backBite) siteOfBite.push('Back');
+      if (req.body.abdomenBite) siteOfBite.push('Abdomen');
+      if (req.body.upperExtremitiesBite) siteOfBite.push('Upper Extremities');
+      if (req.body.lowerExtremitiesBite) siteOfBite.push('Lower Extremities');
+      if (req.body.othersBite) siteOfBite.push('Others');
+      processedBody.siteOfBite = siteOfBite;
+    }
     
     // Nature of Injury
-    const natureOfInjury = [];
-    if (req.body.multipleInjuries) natureOfInjury.push('Multiple Injuries');
-    if (req.body.abrasion) natureOfInjury.push('Abrasion');
-    if (req.body.avulsion) natureOfInjury.push('Avulsion');
-    if (req.body.burn) natureOfInjury.push('Burn');
-    if (req.body.concussion) natureOfInjury.push('Concussion');
-    if (req.body.contusion) natureOfInjury.push('Contusion');
-    if (req.body.openWound) natureOfInjury.push('Open Wound');
-    if (req.body.trauma) natureOfInjury.push('Trauma');
-    if (req.body.othersInjury) natureOfInjury.push('Others');
-    processedBody.natureOfInjury = natureOfInjury;
+    if (req.body.natureOfInjury && req.body.natureOfInjury.length > 0) {
+      processedBody.natureOfInjury = req.body.natureOfInjury;
+    } else {
+      const natureOfInjury = [];
+      if (req.body.multipleInjuries) natureOfInjury.push('Multiple Injuries');
+      if (req.body.abrasion) natureOfInjury.push('Abrasion');
+      if (req.body.avulsion) natureOfInjury.push('Avulsion');
+      if (req.body.burn) natureOfInjury.push('Burn');
+      if (req.body.concussion) natureOfInjury.push('Concussion');
+      if (req.body.contusion) natureOfInjury.push('Contusion');
+      if (req.body.openWound) natureOfInjury.push('Open Wound');
+      if (req.body.trauma) natureOfInjury.push('Trauma');
+      if (req.body.othersInjury) natureOfInjury.push('Others');
+      processedBody.natureOfInjury = natureOfInjury;
+    }
     
     // Add burn and injury details
     processedBody.burnDegree = req.body.burnDegree || 1;

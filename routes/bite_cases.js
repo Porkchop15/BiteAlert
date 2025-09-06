@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
     
     // Use array data from frontend if available, otherwise convert boolean fields to arrays
     // Type of Exposure
-    if (req.body.typeOfExposure && req.body.typeOfExposure.length > 0) {
+    if (req.body.typeOfExposure !== undefined) {
       processedBody.typeOfExposure = req.body.typeOfExposure;
     } else {
       const typeOfExposure = [];
@@ -41,7 +41,7 @@ router.post('/', async (req, res) => {
     }
     
     // Site of Bite
-    if (req.body.siteOfBite && req.body.siteOfBite.length > 0) {
+    if (req.body.siteOfBite !== undefined) {
       processedBody.siteOfBite = req.body.siteOfBite;
     } else {
       const siteOfBite = [];
@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
     }
     
     // Nature of Injury
-    if (req.body.natureOfInjury && req.body.natureOfInjury.length > 0) {
+    if (req.body.natureOfInjury !== undefined) {
       processedBody.natureOfInjury = req.body.natureOfInjury;
     } else {
       const natureOfInjury = [];
@@ -119,10 +119,23 @@ router.post('/', async (req, res) => {
     processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
     processedBody.managementDetails = req.body.managementDetails || '';
     
+    console.log('Backend received array data:', {
+      typeOfExposure: req.body.typeOfExposure,
+      siteOfBite: req.body.siteOfBite,
+      natureOfInjury: req.body.natureOfInjury,
+      externalCause: req.body.externalCause,
+      placeOfOccurrence: req.body.placeOfOccurrence,
+      disposition: req.body.disposition,
+      management: req.body.management
+    });
+    
     console.log('Final processed body arrays:', {
       typeOfExposure: processedBody.typeOfExposure,
       siteOfBite: processedBody.siteOfBite,
       natureOfInjury: processedBody.natureOfInjury,
+      externalCause: processedBody.externalCause,
+      placeOfOccurrence: processedBody.placeOfOccurrence,
+      disposition: processedBody.disposition,
       animalProfile: processedBody.animalProfile,
       patientImmunization: processedBody.patientImmunization,
       currentImmunization: processedBody.currentImmunization,

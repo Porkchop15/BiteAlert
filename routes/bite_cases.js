@@ -26,7 +26,8 @@ router.post('/', async (req, res) => {
     // Preprocess the request body
     const processedBody = {
       ...req.body,
-      middleName: req.body.middleName || ''
+      middleName: req.body.middleName || '',
+      philhealthNo: req.body.philhealthNo || ''
     };
     
     // Use array data from frontend if available, otherwise convert boolean fields to arrays
@@ -167,7 +168,8 @@ router.put('/:id', async (req, res) => {
     // Preprocess the request body
     const processedBody = {
       ...req.body,
-      middleName: req.body.middleName || ''
+      middleName: req.body.middleName || '',
+      philhealthNo: req.body.philhealthNo || ''
     };
     
     // Use array data directly from frontend

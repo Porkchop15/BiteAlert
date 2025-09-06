@@ -6,6 +6,7 @@ const BiteCase = require('../models/BiteCase');
 router.post('/', async (req, res) => {
   try {
     console.log('Received request to create bite case:', req.body);
+    console.log('Backend create - PhilHealth No received:', req.body.philhealthNo);
     console.log('Type of Exposure checkboxes:', {
       typeNonBite: req.body.typeNonBite,
       typeBite: req.body.typeBite
@@ -152,6 +153,7 @@ router.post('/', async (req, res) => {
     const savedBiteCase = await biteCase.save();
     
     console.log('Bite case saved successfully:', savedBiteCase);
+    console.log('Backend create - PhilHealth No saved:', savedBiteCase.philhealthNo);
     res.status(201).json(savedBiteCase);
   } catch (error) {
     console.error('Error creating bite case:', error);

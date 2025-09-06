@@ -6,6 +6,15 @@ const BiteCase = require('../models/BiteCase');
 router.post('/', async (req, res) => {
   try {
     console.log('Received request to create bite case:', req.body);
+    console.log('Type of Exposure checkboxes:', {
+      typeNonBite: req.body.typeNonBite,
+      typeBite: req.body.typeBite
+    });
+    console.log('Site of Bite checkboxes:', {
+      headBite: req.body.headBite,
+      faceBite: req.body.faceBite,
+      neckBite: req.body.neckBite
+    });
     
     // Preprocess the request body
     const processedBody = {
@@ -181,6 +190,15 @@ router.post('/', async (req, res) => {
     currentImmunization.branchNo = req.body.branchNo || '';
     
     processedBody.currentImmunization = currentImmunization;
+    
+    console.log('Final processed body arrays:', {
+      typeOfExposure: processedBody.typeOfExposure,
+      siteOfBite: processedBody.siteOfBite,
+      natureOfInjury: processedBody.natureOfInjury,
+      animalProfile: processedBody.animalProfile,
+      patientImmunization: processedBody.patientImmunization,
+      currentImmunization: processedBody.currentImmunization
+    });
     
     const biteCase = new BiteCase(processedBody);
     const savedBiteCase = await biteCase.save();

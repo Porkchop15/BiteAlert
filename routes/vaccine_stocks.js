@@ -79,10 +79,10 @@ router.post('/', async (req, res) => {
 
       // Validate each stock entry
       for (const entry of vaccine.stockEntries) {
-        if (!entry.expirationDate || typeof entry.stock !== 'number') {
+        if (!entry.expirationDate || !entry.branchNo || typeof entry.stock !== 'number') {
           return res.status(400).json({
             success: false,
-            message: 'Each stock entry must have expirationDate and stock'
+            message: 'Each stock entry must have expirationDate, branchNo, and stock'
           });
         }
       }
@@ -132,10 +132,10 @@ router.put('/:centerName', async (req, res) => {
 
       // Validate each stock entry
       for (const entry of vaccine.stockEntries) {
-        if (!entry.expirationDate || typeof entry.stock !== 'number') {
+        if (!entry.expirationDate || !entry.branchNo || typeof entry.stock !== 'number') {
           return res.status(400).json({
             success: false,
-            message: 'Each stock entry must have expirationDate and stock'
+            message: 'Each stock entry must have expirationDate, branchNo, and stock'
           });
         }
       }

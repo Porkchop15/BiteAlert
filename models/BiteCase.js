@@ -274,7 +274,7 @@ const biteCaseSchema = new mongoose.Schema({
     }
   },
   
-  // Management - Array of selected management options
+  // Management - Complete management object
   management: {
     washingWound: {
       type: [String],
@@ -285,27 +285,27 @@ const biteCaseSchema = new mongoose.Schema({
       type: [String],
       default: [],
       enum: ['Category 1', 'Category 2', 'Category 3']
+    },
+    diagnosis: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    allergyHistory: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    maintenanceMedications: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    managementDetails: {
+      type: String,
+      required: false,
+      default: ''
     }
-  },
-  diagnosis: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  allergyHistory: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  maintenanceMedications: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  managementDetails: {
-    type: String,
-    required: false,
-    default: ''
   },
   
   // Patient Immunization - Using nested objects

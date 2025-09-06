@@ -55,11 +55,20 @@ router.post('/', async (req, res) => {
     if (req.body.othersInjury) natureOfInjury.push('Others');
     processedBody.natureOfInjury = natureOfInjury;
     
+    // Add burn and injury details
+    processedBody.burnDegree = req.body.burnDegree || 1;
+    processedBody.burnSite = req.body.burnSite || '';
+    processedBody.othersInjuryDetails = req.body.othersInjuryDetails || '';
+    
     // External Cause
     const externalCause = [];
     if (req.body.biteSting) externalCause.push('Bite/Sting');
     if (req.body.chemicalSubstance) externalCause.push('Chemical Substance');
     processedBody.externalCause = externalCause;
+    
+    // Add external cause details
+    processedBody.biteStingDetails = req.body.biteStingDetails || '';
+    processedBody.chemicalSubstanceDetails = req.body.chemicalSubstanceDetails || '';
     
     // Place of Occurrence
     const placeOfOccurrence = [];
@@ -70,11 +79,17 @@ router.post('/', async (req, res) => {
     if (req.body.placeOthers) placeOfOccurrence.push('Others');
     processedBody.placeOfOccurrence = placeOfOccurrence;
     
+    // Add place of occurrence details
+    processedBody.placeOthersDetails = req.body.placeOthersDetails || '';
+    
     // Disposition
     const disposition = [];
     if (req.body.dispositionTreated) disposition.push('Treated & Sent Home');
     if (req.body.dispositionTransferred) disposition.push('Transferred to another facility/hospital');
     processedBody.disposition = disposition;
+    
+    // Add disposition details
+    processedBody.transferredTo = req.body.transferredTo || '';
     
     // Circumstance of Bite
     const circumstanceOfBite = [];
@@ -191,13 +206,34 @@ router.post('/', async (req, res) => {
     
     processedBody.currentImmunization = currentImmunization;
     
+    // Management - Nested Object
+    const management = {
+      washingWound: []
+    };
+    if (req.body.washingWoundYes) management.washingWound.push('Yes');
+    if (req.body.washingWoundNo) management.washingWound.push('No');
+    
+    management.category = [];
+    if (req.body.category1) management.category.push('Category 1');
+    if (req.body.category2) management.category.push('Category 2');
+    if (req.body.category3) management.category.push('Category 3');
+    
+    processedBody.management = management;
+    
+    // Add other management-related fields
+    processedBody.diagnosis = req.body.diagnosis || '';
+    processedBody.allergyHistory = req.body.allergyHistory || '';
+    processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
+    processedBody.managementDetails = req.body.management || '';
+    
     console.log('Final processed body arrays:', {
       typeOfExposure: processedBody.typeOfExposure,
       siteOfBite: processedBody.siteOfBite,
       natureOfInjury: processedBody.natureOfInjury,
       animalProfile: processedBody.animalProfile,
       patientImmunization: processedBody.patientImmunization,
-      currentImmunization: processedBody.currentImmunization
+      currentImmunization: processedBody.currentImmunization,
+      management: processedBody.management
     });
     
     const biteCase = new BiteCase(processedBody);
@@ -256,11 +292,20 @@ router.put('/:id', async (req, res) => {
     if (req.body.othersInjury) natureOfInjury.push('Others');
     processedBody.natureOfInjury = natureOfInjury;
     
+    // Add burn and injury details
+    processedBody.burnDegree = req.body.burnDegree || 1;
+    processedBody.burnSite = req.body.burnSite || '';
+    processedBody.othersInjuryDetails = req.body.othersInjuryDetails || '';
+    
     // External Cause
     const externalCause = [];
     if (req.body.biteSting) externalCause.push('Bite/Sting');
     if (req.body.chemicalSubstance) externalCause.push('Chemical Substance');
     processedBody.externalCause = externalCause;
+    
+    // Add external cause details
+    processedBody.biteStingDetails = req.body.biteStingDetails || '';
+    processedBody.chemicalSubstanceDetails = req.body.chemicalSubstanceDetails || '';
     
     // Place of Occurrence
     const placeOfOccurrence = [];
@@ -271,11 +316,17 @@ router.put('/:id', async (req, res) => {
     if (req.body.placeOthers) placeOfOccurrence.push('Others');
     processedBody.placeOfOccurrence = placeOfOccurrence;
     
+    // Add place of occurrence details
+    processedBody.placeOthersDetails = req.body.placeOthersDetails || '';
+    
     // Disposition
     const disposition = [];
     if (req.body.dispositionTreated) disposition.push('Treated & Sent Home');
     if (req.body.dispositionTransferred) disposition.push('Transferred to another facility/hospital');
     processedBody.disposition = disposition;
+    
+    // Add disposition details
+    processedBody.transferredTo = req.body.transferredTo || '';
     
     // Circumstance of Bite
     const circumstanceOfBite = [];
@@ -391,6 +442,26 @@ router.put('/:id', async (req, res) => {
     currentImmunization.branchNo = req.body.branchNo || '';
     
     processedBody.currentImmunization = currentImmunization;
+    
+    // Management - Nested Object
+    const management = {
+      washingWound: []
+    };
+    if (req.body.washingWoundYes) management.washingWound.push('Yes');
+    if (req.body.washingWoundNo) management.washingWound.push('No');
+    
+    management.category = [];
+    if (req.body.category1) management.category.push('Category 1');
+    if (req.body.category2) management.category.push('Category 2');
+    if (req.body.category3) management.category.push('Category 3');
+    
+    processedBody.management = management;
+    
+    // Add other management-related fields
+    processedBody.diagnosis = req.body.diagnosis || '';
+    processedBody.allergyHistory = req.body.allergyHistory || '';
+    processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
+    processedBody.managementDetails = req.body.management || '';
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,

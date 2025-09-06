@@ -7,6 +7,7 @@ router.post('/', async (req, res) => {
   try {
     console.log('Received request to create bite case:', req.body);
     console.log('Backend create - PhilHealth No received:', req.body.philhealthNo);
+    console.log('Backend create - Management object received:', req.body.management);
     console.log('Type of Exposure checkboxes:', {
       typeNonBite: req.body.typeNonBite,
       typeBite: req.body.typeBite
@@ -112,14 +113,8 @@ router.post('/', async (req, res) => {
     // Current Immunization - Use nested object data directly
     processedBody.currentImmunization = req.body.currentImmunization || {};
     
-    // Management fields are now sent as individual string fields
-    // No need to process as nested object
-    
-    // Add other management-related fields
-    processedBody.diagnosis = req.body.diagnosis || '';
-    processedBody.allergyHistory = req.body.allergyHistory || '';
-    processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
-    processedBody.managementDetails = req.body.managementDetails || '';
+    // Management - Use nested object data directly (same as update route)
+    processedBody.management = req.body.management || {};
     
     console.log('Backend received array data:', {
       typeOfExposure: req.body.typeOfExposure,
@@ -154,6 +149,7 @@ router.post('/', async (req, res) => {
     
     console.log('Bite case saved successfully:', savedBiteCase);
     console.log('Backend create - PhilHealth No saved:', savedBiteCase.philhealthNo);
+    console.log('Backend create - Management object saved:', savedBiteCase.management);
     res.status(201).json(savedBiteCase);
   } catch (error) {
     console.error('Error creating bite case:', error);

@@ -15,6 +15,13 @@ router.post('/', async (req, res) => {
       faceBite: req.body.faceBite,
       neckBite: req.body.neckBite
     });
+    console.log('Management checkboxes:', {
+      washingWoundYes: req.body.washingWoundYes,
+      washingWoundNo: req.body.washingWoundNo,
+      category1: req.body.category1,
+      category2: req.body.category2,
+      category3: req.body.category3
+    });
     
     // Preprocess the request body
     const processedBody = {
@@ -224,7 +231,7 @@ router.post('/', async (req, res) => {
     processedBody.diagnosis = req.body.diagnosis || '';
     processedBody.allergyHistory = req.body.allergyHistory || '';
     processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
-    processedBody.managementDetails = req.body.management || '';
+    processedBody.managementDetails = req.body.managementDetails || '';
     
     console.log('Final processed body arrays:', {
       typeOfExposure: processedBody.typeOfExposure,
@@ -235,6 +242,11 @@ router.post('/', async (req, res) => {
       currentImmunization: processedBody.currentImmunization,
       management: processedBody.management
     });
+    
+    console.log('Raw boolean values being processed:');
+    console.log('typeNonBite:', req.body.typeNonBite, 'typeBite:', req.body.typeBite);
+    console.log('headBite:', req.body.headBite, 'faceBite:', req.body.faceBite);
+    console.log('washingWoundYes:', req.body.washingWoundYes, 'washingWoundNo:', req.body.washingWoundNo);
     
     const biteCase = new BiteCase(processedBody);
     const savedBiteCase = await biteCase.save();
@@ -461,7 +473,7 @@ router.put('/:id', async (req, res) => {
     processedBody.diagnosis = req.body.diagnosis || '';
     processedBody.allergyHistory = req.body.allergyHistory || '';
     processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
-    processedBody.managementDetails = req.body.management || '';
+    processedBody.managementDetails = req.body.managementDetails || '';
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,

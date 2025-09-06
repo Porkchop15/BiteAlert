@@ -19,6 +19,16 @@ const biteCaseSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  arrivalDate: {
+    type: String,
+    required: false,
+    default: ''
+  },
+  arrivalTime: {
+    type: String,
+    required: false,
+    default: ''
+  },
   firstName: {
     type: String,
     required: true
@@ -187,7 +197,8 @@ const biteCaseSchema = new mongoose.Schema({
   remarks: {
     type: String
   },
-  // History of Bite
+  
+  // History of Bite - Using Arrays
   dateOfInquiry: {
     type: String,
     required: false,
@@ -199,63 +210,18 @@ const biteCaseSchema = new mongoose.Schema({
     default: ''
   },
   
-  // Type of Exposure
-  typeNonBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  typeBite: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Type of Exposure - Array of selected types
+  typeOfExposure: {
+    type: [String],
+    default: [],
+    enum: ['NON-BITE', 'BITE']
   },
   
-  // Site of Bite
-  headBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  faceBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  neckBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  chestBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  backBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  abdomenBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  upperExtremitiesBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  lowerExtremitiesBite: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  othersBite: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Site of Bite - Array of selected sites
+  siteOfBite: {
+    type: [String],
+    default: [],
+    enum: ['Head', 'Face', 'Neck', 'Chest', 'Back', 'Abdomen', 'Upper Extremities', 'Lower Extremities', 'Others']
   },
   othersBiteSpecify: {
     type: String,
@@ -263,26 +229,11 @@ const biteCaseSchema = new mongoose.Schema({
     default: ''
   },
   
-  // Nature of Injury
-  multipleInjuries: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  abrasion: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  avulsion: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  burn: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Nature of Injury - Array of selected injuries
+  natureOfInjury: {
+    type: [String],
+    default: [],
+    enum: ['Multiple Injuries', 'Abrasion', 'Avulsion', 'Burn', 'Concussion', 'Contusion', 'Open Wound', 'Trauma', 'Others']
   },
   burnDegree: {
     type: Number,
@@ -294,52 +245,23 @@ const biteCaseSchema = new mongoose.Schema({
     required: false,
     default: ''
   },
-  concussion: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  contusion: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  openWound: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  trauma: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  othersInjury: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
+  // Text fields for specific injury details
   othersInjuryDetails: {
     type: String,
     required: false,
     default: ''
   },
   
-  // External Cause
-  biteSting: {
-    type: Boolean,
-    required: false,
-    default: false
+  // External Cause - Array of selected causes
+  externalCause: {
+    type: [String],
+    default: [],
+    enum: ['Bite/Sting', 'Chemical Substance']
   },
   biteStingDetails: {
     type: String,
     required: false,
     default: ''
-  },
-  chemicalSubstance: {
-    type: Boolean,
-    required: false,
-    default: false
   },
   chemicalSubstanceDetails: {
     type: String,
@@ -347,31 +269,11 @@ const biteCaseSchema = new mongoose.Schema({
     default: ''
   },
   
-  // Place of Occurrence
-  placeHome: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  placeSchool: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  placeRoad: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  placeNeighbor: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  placeOthers: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Place of Occurrence - Array of selected places
+  placeOfOccurrence: {
+    type: [String],
+    default: [],
+    enum: ['Home', 'School', 'Road', 'Neighbor', 'Others']
   },
   placeOthersDetails: {
     type: String,
@@ -379,16 +281,11 @@ const biteCaseSchema = new mongoose.Schema({
     default: ''
   },
   
-  // Disposition
-  dispositionTreated: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  dispositionTransferred: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Disposition - Array of selected dispositions
+  disposition: {
+    type: [String],
+    default: [],
+    enum: ['Treated & Sent Home', 'Transferred to another facility/hospital']
   },
   transferredTo: {
     type: String,
@@ -396,135 +293,69 @@ const biteCaseSchema = new mongoose.Schema({
     default: ''
   },
   
-  // Circumstance of Bite
-  circumstanceProvoked: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  circumstanceUnprovoked: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Circumstance of Bite - Array of selected circumstances
+  circumstanceOfBite: {
+    type: [String],
+    default: [],
+    enum: ['Provoked', 'Unprovoked']
   },
   
-  // Animal Profile
-  animalDog: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalCat: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalOthers: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalOthersSpecify: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  animalHealthy: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalSick: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalDied: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalKilled: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalBrainExamDone: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalNoBrainExam: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalUnknown: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalImmunized: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalNotImmunized: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalVaccinationDate: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  animalPet: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalNeighbor: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  animalStray: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Animal Profile - Using nested objects for better organization
+  animalProfile: {
+    species: {
+      type: [String],
+      default: [],
+      enum: ['Dog', 'Cat', 'Others']
+    },
+    othersSpecify: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    clinicalStatus: {
+      type: [String],
+      default: [],
+      enum: ['Healthy', 'Sick', 'Died', 'Killed']
+    },
+    brainExam: {
+      type: [String],
+      default: [],
+      enum: ['Brain Exam Done', 'No Brain Exam', 'Unknown']
+    },
+    vaccinationStatus: {
+      type: [String],
+      default: [],
+      enum: ['Immunized', 'Not Immunized']
+    },
+    vaccinationDate: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    ownership: {
+      type: [String],
+      default: [],
+      enum: ['Pet', 'Neighbor', 'Stray']
+    }
   },
   
-  // Management
-  washingWoundYes: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  washingWoundNo: {
-    type: Boolean,
-    required: false,
-    default: false
+  // Management - Array of selected management options
+  management: {
+    washingWound: {
+      type: [String],
+      default: [],
+      enum: ['Yes', 'No']
+    },
+    category: {
+      type: [String],
+      default: [],
+      enum: ['Category 1', 'Category 2', 'Category 3']
+    }
   },
   diagnosis: {
     type: String,
     required: false,
     default: ''
-  },
-  category1: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  category2: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  category3: {
-    type: Boolean,
-    required: false,
-    default: false
   },
   allergyHistory: {
     type: String,
@@ -536,195 +367,167 @@ const biteCaseSchema = new mongoose.Schema({
     required: false,
     default: ''
   },
-  management: {
+  managementDetails: {
     type: String,
     required: false,
     default: ''
   },
   
-  // Patient Immunization
-  dptComplete: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  dptIncomplete: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  dptNone: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  dptYearGiven: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  dptDosesGiven: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  ttActive: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  ttPassive: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  tt1Date: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  tt2Date: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  tt3Date: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  skinTest: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  skinTestTime: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  skinTestReadTime: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  skinTestResult: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  tig: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  tigDose: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  tigDate: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  
-  // Current Anti-Rabies Immunization
-  currentActive: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentPostExposure: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentPreExposure: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentPreviouslyImmunized: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentPvrv: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentPcec: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentId: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentIm: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentPassive: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentSkinTest: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentSkinTestTime: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  currentSkinTestReadTime: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  currentSkinTestResult: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  currentHrig: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  hrigDose: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  hrigDate: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  currentLocalInfiltration: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentStructured: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
-  currentUnstructured: {
-    type: Boolean,
-    required: false,
-    default: false
-  },
+  // Patient Immunization - Using nested objects
+  patientImmunization: {
+    dpt: {
+      type: [String],
+      default: [],
+      enum: ['Complete', 'Incomplete', 'None']
+    },
+    dptYearGiven: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    dptDosesGiven: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    tt: {
+      type: [String],
+      default: [],
+      enum: ['Active', 'Passive']
+    },
+    ttDates: {
+      type: [String],
+      default: []
+    },
+    skinTest: {
+      type: Boolean,
+      default: false
+    },
+    skinTestTime: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    skinTestReadTime: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    skinTestResult: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    tig: {
+      type: Boolean,
+      default: false
+    },
+    tigDose: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    tigDate: {
+      type: String,
+      required: false,
+      default: ''
+    }
+   },
+   
+   // ERIG Section - Before D0
+   erig: {
+     dateTaken: {
+       type: String,
+       required: false,
+       default: ''
+     },
+     medicineUsed: {
+       type: String,
+       required: false,
+       default: ''
+     },
+     branchNo: {
+       type: String,
+       required: false,
+       default: ''
+     }
+   },
+   
+   // Current Anti-Rabies Immunization - Using nested objects
+  currentImmunization: {
+    type: {
+      type: [String],
+      default: [],
+      enum: ['Active', 'Post-exposure', 'Pre-exposure', 'Previously Immunized']
+    },
+    vaccine: {
+      type: [String],
+      default: [],
+      enum: ['PVRV', 'PCEC']
+    },
+    route: {
+      type: [String],
+      default: [],
+      enum: ['ID', 'IM']
+    },
+    passive: {
+      type: Boolean,
+      default: false
+    },
+    skinTest: {
+      type: Boolean,
+      default: false
+    },
+    skinTestTime: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    skinTestReadTime: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    skinTestResult: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    hrig: {
+      type: Boolean,
+      default: false
+    },
+    hrigDose: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    hrigDate: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    localInfiltration: {
+      type: Boolean,
+      default: false
+    },
+     schedule: {
+       type: [String],
+       default: [],
+       enum: ['Structured', 'Unstructured']
+     },
+     // Medicine and Branch fields for current immunization
+     medicineUsed: {
+       type: String,
+       required: false,
+       default: ''
+     },
+     branchNo: {
+       type: String,
+       required: false,
+       default: ''
+     }
+   },
   
   status: {
     type: String,
@@ -734,4 +537,4 @@ const biteCaseSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('BiteCase', biteCaseSchema); 
+module.exports = mongoose.model('BiteCase', biteCaseSchema);

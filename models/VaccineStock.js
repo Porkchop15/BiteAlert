@@ -14,6 +14,7 @@ const vaccineSchema = new mongoose.Schema({
   brand: { type: String, required: true }, // Optional for TCV/ERIG/Booster
   stockEntries: [{
     expirationDate: { type: String, required: true },
+    branchNo: { type: String, required: true },
     stock: { type: Number, required: true }
   }]
 });

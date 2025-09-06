@@ -194,14 +194,9 @@ router.put('/:id', async (req, res) => {
     // Current Immunization - Use nested object data directly
     processedBody.currentImmunization = req.body.currentImmunization || {};
     
-    // Management fields are now sent as individual string fields
-    // No need to process as nested object
-    
-    // Add other management-related fields
-    processedBody.diagnosis = req.body.diagnosis || '';
-    processedBody.allergyHistory = req.body.allergyHistory || '';
-    processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
-    processedBody.managementDetails = req.body.managementDetails || '';
+    // Management - Use nested object data directly
+    processedBody.management = req.body.management || {};
+    console.log('Backend received management object:', req.body.management);
 
     console.log('Final processed body arrays:', {
       typeOfExposure: processedBody.typeOfExposure,
@@ -210,7 +205,8 @@ router.put('/:id', async (req, res) => {
       externalCause: processedBody.externalCause,
       placeOfOccurrence: processedBody.placeOfOccurrence,
       disposition: processedBody.disposition,
-      circumstanceOfBite: processedBody.circumstanceOfBite
+      circumstanceOfBite: processedBody.circumstanceOfBite,
+      management: processedBody.management
     });
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(

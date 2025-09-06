@@ -353,6 +353,16 @@ const biteCaseSchema = new mongoose.Schema({
       required: false,
       default: ''
     },
+    skinTestDose: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    skinTestDate: {
+      type: String,
+      required: false,
+      default: ''
+    },
     tig: {
       type: Boolean,
       default: false
@@ -424,6 +434,11 @@ const biteCaseSchema = new mongoose.Schema({
       default: ''
     },
     skinTestResult: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    skinTestDate: {
       type: String,
       required: false,
       default: ''

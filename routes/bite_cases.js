@@ -153,15 +153,11 @@ router.post('/', async (req, res) => {
     currentImmunization.vaccine = [];
     if (req.body.currentPvrv) currentImmunization.vaccine.push('PVRV');
     if (req.body.currentPcec) currentImmunization.vaccine.push('PCEC');
-    if (req.body.currentId) currentImmunization.vaccine.push('ID');
-    if (req.body.currentIm) currentImmunization.vaccine.push('IM');
     
     // Current Immunization - Route
     currentImmunization.route = [];
-    if (req.body.currentPassive) currentImmunization.route.push('Passive');
-    if (req.body.currentSkinTest) currentImmunization.route.push('Skin test');
-    if (req.body.currentHrig) currentImmunization.route.push('HRIG');
-    if (req.body.currentLocalInfiltration) currentImmunization.route.push('Local Infiltration');
+    if (req.body.currentId) currentImmunization.route.push('ID');
+    if (req.body.currentIm) currentImmunization.route.push('IM');
     
     // Current Immunization - Schedule
     currentImmunization.schedule = [];
@@ -346,15 +342,11 @@ router.put('/:id', async (req, res) => {
     currentImmunization.vaccine = [];
     if (req.body.currentPvrv) currentImmunization.vaccine.push('PVRV');
     if (req.body.currentPcec) currentImmunization.vaccine.push('PCEC');
-    if (req.body.currentId) currentImmunization.vaccine.push('ID');
-    if (req.body.currentIm) currentImmunization.vaccine.push('IM');
     
     // Current Immunization - Route
     currentImmunization.route = [];
-    if (req.body.currentPassive) currentImmunization.route.push('Passive');
-    if (req.body.currentSkinTest) currentImmunization.route.push('Skin test');
-    if (req.body.currentHrig) currentImmunization.route.push('HRIG');
-    if (req.body.currentLocalInfiltration) currentImmunization.route.push('Local Infiltration');
+    if (req.body.currentId) currentImmunization.route.push('ID');
+    if (req.body.currentIm) currentImmunization.route.push('IM');
     
     // Current Immunization - Schedule
     currentImmunization.schedule = [];

@@ -67,165 +67,39 @@ router.post('/', async (req, res) => {
     processedBody.burnSite = req.body.burnSite || '';
     processedBody.othersInjuryDetails = req.body.othersInjuryDetails || '';
     
-    // External Cause
-    const externalCause = [];
-    if (req.body.biteSting) externalCause.push('Bite/Sting');
-    if (req.body.chemicalSubstance) externalCause.push('Chemical Substance');
-    processedBody.externalCause = externalCause;
+    // External Cause - Use array data directly
+    processedBody.externalCause = req.body.externalCause || [];
     
     // Add external cause details
     processedBody.biteStingDetails = req.body.biteStingDetails || '';
     processedBody.chemicalSubstanceDetails = req.body.chemicalSubstanceDetails || '';
     
-    // Place of Occurrence
-    const placeOfOccurrence = [];
-    if (req.body.placeHome) placeOfOccurrence.push('Home');
-    if (req.body.placeSchool) placeOfOccurrence.push('School');
-    if (req.body.placeRoad) placeOfOccurrence.push('Road');
-    if (req.body.placeNeighbor) placeOfOccurrence.push('Neighbor');
-    if (req.body.placeOthers) placeOfOccurrence.push('Others');
-    processedBody.placeOfOccurrence = placeOfOccurrence;
+    // Place of Occurrence - Use array data directly
+    processedBody.placeOfOccurrence = req.body.placeOfOccurrence || [];
     
     // Add place of occurrence details
     processedBody.placeOthersDetails = req.body.placeOthersDetails || '';
     
-    // Disposition
-    const disposition = [];
-    if (req.body.dispositionTreated) disposition.push('Treated & Sent Home');
-    if (req.body.dispositionTransferred) disposition.push('Transferred to another facility/hospital');
-    processedBody.disposition = disposition;
+    // Disposition - Use array data directly
+    processedBody.disposition = req.body.disposition || [];
     
     // Add disposition details
     processedBody.transferredTo = req.body.transferredTo || '';
     
-    // Circumstance of Bite
-    const circumstanceOfBite = [];
-    if (req.body.circumstanceProvoked) circumstanceOfBite.push('Provoked');
-    if (req.body.circumstanceUnprovoked) circumstanceOfBite.push('Unprovoked');
-    processedBody.circumstanceOfBite = circumstanceOfBite;
+    // Circumstance of Bite - Use array data directly
+    processedBody.circumstanceOfBite = req.body.circumstanceOfBite || [];
     
-    // Animal Profile - Nested Object
-    const animalProfile = {
-      species: []
-    };
-    if (req.body.animalDog) animalProfile.species.push('Dog');
-    if (req.body.animalCat) animalProfile.species.push('Cat');
-    if (req.body.animalOthers) animalProfile.species.push('Others');
+    // Animal Profile - Use nested object data directly
+    processedBody.animalProfile = req.body.animalProfile || {};
     
-    // Animal Profile - Clinical Status
-    animalProfile.clinicalStatus = [];
-    if (req.body.animalHealthy) animalProfile.clinicalStatus.push('Healthy');
-    if (req.body.animalSick) animalProfile.clinicalStatus.push('Sick');
-    if (req.body.animalDied) animalProfile.clinicalStatus.push('Died');
-    if (req.body.animalKilled) animalProfile.clinicalStatus.push('Killed');
+    // Patient Immunization - Use nested object data directly
+    processedBody.patientImmunization = req.body.patientImmunization || {};
     
-    // Animal Profile - Brain Exam
-    animalProfile.brainExam = [];
-    if (req.body.animalBrainExamDone) animalProfile.brainExam.push('Brain Exam Done');
-    if (req.body.animalNoBrainExam) animalProfile.brainExam.push('No Brain Exam');
-    if (req.body.animalUnknown) animalProfile.brainExam.push('Unknown');
+    // Current Immunization - Use nested object data directly
+    processedBody.currentImmunization = req.body.currentImmunization || {};
     
-    // Animal Profile - Vaccination Status
-    animalProfile.vaccinationStatus = [];
-    if (req.body.animalImmunized) animalProfile.vaccinationStatus.push('Immunized');
-    if (req.body.animalNotImmunized) animalProfile.vaccinationStatus.push('Not Immunized');
-    
-    // Animal Profile - Ownership
-    animalProfile.ownership = [];
-    if (req.body.animalPet) animalProfile.ownership.push('Pet');
-    if (req.body.animalNeighbor) animalProfile.ownership.push('Neighbor');
-    if (req.body.animalStray) animalProfile.ownership.push('Stray');
-    
-    // Add other animal profile fields
-    animalProfile.othersSpecify = req.body.animalOthersSpecify || '';
-    animalProfile.vaccinationDate = req.body.animalVaccinationDate || '';
-    
-    processedBody.animalProfile = animalProfile;
-    
-    // Patient Immunization - Nested Object
-    const patientImmunization = {
-      dpt: []
-    };
-    if (req.body.dptComplete) patientImmunization.dpt.push('Complete');
-    if (req.body.dptIncomplete) patientImmunization.dpt.push('Incomplete');
-    if (req.body.dptNone) patientImmunization.dpt.push('None');
-    
-    // Patient Immunization - TT (nested object)
-    patientImmunization.tt = [];
-    if (req.body.ttActive) patientImmunization.tt.push('Active');
-    if (req.body.ttPassive) patientImmunization.tt.push('Passive');
-    
-    // Patient Immunization - TT Dates
-    patientImmunization.ttDates = [];
-    if (req.body.tt1Date) patientImmunization.ttDates.push(req.body.tt1Date);
-    if (req.body.tt2Date) patientImmunization.ttDates.push(req.body.tt2Date);
-    if (req.body.tt3Date) patientImmunization.ttDates.push(req.body.tt3Date);
-    
-    // Add other patient immunization fields
-    patientImmunization.dptYearGiven = req.body.dptYearGiven || '';
-    patientImmunization.dptDosesGiven = req.body.dptDosesGiven || '';
-    patientImmunization.skinTest = req.body.skinTest || false;
-    patientImmunization.skinTestTime = req.body.skinTestTime || '';
-    patientImmunization.skinTestReadTime = req.body.skinTestReadTime || '';
-    patientImmunization.skinTestResult = req.body.skinTestResult || '';
-    patientImmunization.tig = req.body.tig || false;
-    patientImmunization.tigDose = req.body.tigDose || '';
-    patientImmunization.tigDate = req.body.tigDate || '';
-    
-    processedBody.patientImmunization = patientImmunization;
-    
-    // Current Immunization - Nested Object
-    const currentImmunization = {
-      type: []
-    };
-    if (req.body.currentActive) currentImmunization.type.push('Active');
-    if (req.body.currentPostExposure) currentImmunization.type.push('Post-exposure');
-    if (req.body.currentPreExposure) currentImmunization.type.push('Pre-exposure');
-    if (req.body.currentPreviouslyImmunized) currentImmunization.type.push('Previously Immunized');
-    
-    // Current Immunization - Vaccine
-    currentImmunization.vaccine = [];
-    if (req.body.currentPvrv) currentImmunization.vaccine.push('PVRV');
-    if (req.body.currentPcec) currentImmunization.vaccine.push('PCEC');
-    
-    // Current Immunization - Route
-    currentImmunization.route = [];
-    if (req.body.currentId) currentImmunization.route.push('ID');
-    if (req.body.currentIm) currentImmunization.route.push('IM');
-    
-    // Current Immunization - Schedule
-    currentImmunization.schedule = [];
-    if (req.body.currentStructured) currentImmunization.schedule.push('Structured');
-    if (req.body.currentUnstructured) currentImmunization.schedule.push('Unstructured');
-    
-    // Add other current immunization fields
-    currentImmunization.passive = req.body.currentPassive || false;
-    currentImmunization.skinTest = req.body.currentSkinTest || false;
-    currentImmunization.skinTestTime = req.body.currentSkinTestTime || '';
-    currentImmunization.skinTestReadTime = req.body.currentSkinTestReadTime || '';
-    currentImmunization.skinTestResult = req.body.currentSkinTestResult || '';
-    currentImmunization.hrig = req.body.currentHrig || false;
-    currentImmunization.hrigDose = req.body.hrigDose || '';
-    currentImmunization.hrigDate = req.body.hrigDate || '';
-    currentImmunization.localInfiltration = req.body.currentLocalInfiltration || false;
-    currentImmunization.medicineUsed = req.body.medicineUsed || '';
-    currentImmunization.branchNo = req.body.branchNo || '';
-    
-    processedBody.currentImmunization = currentImmunization;
-    
-    // Management - Nested Object
-    const management = {
-      washingWound: []
-    };
-    if (req.body.washingWoundYes) management.washingWound.push('Yes');
-    if (req.body.washingWoundNo) management.washingWound.push('No');
-    
-    management.category = [];
-    if (req.body.category1) management.category.push('Category 1');
-    if (req.body.category2) management.category.push('Category 2');
-    if (req.body.category3) management.category.push('Category 3');
-    
-    processedBody.management = management;
+    // Management fields are now sent as individual string fields
+    // No need to process as nested object
     
     // Add other management-related fields
     processedBody.diagnosis = req.body.diagnosis || '';
@@ -271,209 +145,73 @@ router.put('/:id', async (req, res) => {
       middleName: req.body.middleName || ''
     };
     
-    // Convert boolean fields to arrays (same logic as create)
-    // Type of Exposure
-    const typeOfExposure = [];
-    if (req.body.typeNonBite) typeOfExposure.push('NON-BITE');
-    if (req.body.typeBite) typeOfExposure.push('BITE');
-    processedBody.typeOfExposure = typeOfExposure;
+    // Use array data directly from frontend
+    // Type of Exposure - Use array data directly
+    processedBody.typeOfExposure = req.body.typeOfExposure || [];
+    console.log('Backend received typeOfExposure:', req.body.typeOfExposure);
     
-    // Site of Bite
-    const siteOfBite = [];
-    if (req.body.headBite) siteOfBite.push('Head');
-    if (req.body.faceBite) siteOfBite.push('Face');
-    if (req.body.neckBite) siteOfBite.push('Neck');
-    if (req.body.chestBite) siteOfBite.push('Chest');
-    if (req.body.backBite) siteOfBite.push('Back');
-    if (req.body.abdomenBite) siteOfBite.push('Abdomen');
-    if (req.body.upperExtremitiesBite) siteOfBite.push('Upper Extremities');
-    if (req.body.lowerExtremitiesBite) siteOfBite.push('Lower Extremities');
-    if (req.body.othersBite) siteOfBite.push('Others');
-    processedBody.siteOfBite = siteOfBite;
+    // Site of Bite - Use array data directly
+    processedBody.siteOfBite = req.body.siteOfBite || [];
+    console.log('Backend received siteOfBite:', req.body.siteOfBite);
     
-    // Nature of Injury
-    const natureOfInjury = [];
-    if (req.body.multipleInjuries) natureOfInjury.push('Multiple Injuries');
-    if (req.body.abrasion) natureOfInjury.push('Abrasion');
-    if (req.body.avulsion) natureOfInjury.push('Avulsion');
-    if (req.body.burn) natureOfInjury.push('Burn');
-    if (req.body.concussion) natureOfInjury.push('Concussion');
-    if (req.body.contusion) natureOfInjury.push('Contusion');
-    if (req.body.openWound) natureOfInjury.push('Open Wound');
-    if (req.body.trauma) natureOfInjury.push('Trauma');
-    if (req.body.othersInjury) natureOfInjury.push('Others');
-    processedBody.natureOfInjury = natureOfInjury;
+    // Nature of Injury - Use array data directly
+    processedBody.natureOfInjury = req.body.natureOfInjury || [];
+    console.log('Backend received natureOfInjury:', req.body.natureOfInjury);
     
     // Add burn and injury details
     processedBody.burnDegree = req.body.burnDegree || 1;
     processedBody.burnSite = req.body.burnSite || '';
     processedBody.othersInjuryDetails = req.body.othersInjuryDetails || '';
     
-    // External Cause
-    const externalCause = [];
-    if (req.body.biteSting) externalCause.push('Bite/Sting');
-    if (req.body.chemicalSubstance) externalCause.push('Chemical Substance');
-    processedBody.externalCause = externalCause;
+    // External Cause - Use array data directly
+    processedBody.externalCause = req.body.externalCause || [];
     
     // Add external cause details
     processedBody.biteStingDetails = req.body.biteStingDetails || '';
     processedBody.chemicalSubstanceDetails = req.body.chemicalSubstanceDetails || '';
     
-    // Place of Occurrence
-    const placeOfOccurrence = [];
-    if (req.body.placeHome) placeOfOccurrence.push('Home');
-    if (req.body.placeSchool) placeOfOccurrence.push('School');
-    if (req.body.placeRoad) placeOfOccurrence.push('Road');
-    if (req.body.placeNeighbor) placeOfOccurrence.push('Neighbor');
-    if (req.body.placeOthers) placeOfOccurrence.push('Others');
-    processedBody.placeOfOccurrence = placeOfOccurrence;
+    // Place of Occurrence - Use array data directly
+    processedBody.placeOfOccurrence = req.body.placeOfOccurrence || [];
     
     // Add place of occurrence details
     processedBody.placeOthersDetails = req.body.placeOthersDetails || '';
     
-    // Disposition
-    const disposition = [];
-    if (req.body.dispositionTreated) disposition.push('Treated & Sent Home');
-    if (req.body.dispositionTransferred) disposition.push('Transferred to another facility/hospital');
-    processedBody.disposition = disposition;
+    // Disposition - Use array data directly
+    processedBody.disposition = req.body.disposition || [];
     
     // Add disposition details
     processedBody.transferredTo = req.body.transferredTo || '';
     
-    // Circumstance of Bite
-    const circumstanceOfBite = [];
-    if (req.body.circumstanceProvoked) circumstanceOfBite.push('Provoked');
-    if (req.body.circumstanceUnprovoked) circumstanceOfBite.push('Unprovoked');
-    processedBody.circumstanceOfBite = circumstanceOfBite;
+    // Circumstance of Bite - Use array data directly
+    processedBody.circumstanceOfBite = req.body.circumstanceOfBite || [];
     
-    // Animal Profile - Nested Object
-    const animalProfile = {
-      species: []
-    };
-    if (req.body.animalDog) animalProfile.species.push('Dog');
-    if (req.body.animalCat) animalProfile.species.push('Cat');
-    if (req.body.animalOthers) animalProfile.species.push('Others');
+    // Animal Profile - Use nested object data directly
+    processedBody.animalProfile = req.body.animalProfile || {};
     
-    // Animal Profile - Clinical Status
-    animalProfile.clinicalStatus = [];
-    if (req.body.animalHealthy) animalProfile.clinicalStatus.push('Healthy');
-    if (req.body.animalSick) animalProfile.clinicalStatus.push('Sick');
-    if (req.body.animalDied) animalProfile.clinicalStatus.push('Died');
-    if (req.body.animalKilled) animalProfile.clinicalStatus.push('Killed');
+    // Patient Immunization - Use nested object data directly
+    processedBody.patientImmunization = req.body.patientImmunization || {};
     
-    // Animal Profile - Brain Exam
-    animalProfile.brainExam = [];
-    if (req.body.animalBrainExamDone) animalProfile.brainExam.push('Brain Exam Done');
-    if (req.body.animalNoBrainExam) animalProfile.brainExam.push('No Brain Exam');
-    if (req.body.animalUnknown) animalProfile.brainExam.push('Unknown');
+    // Current Immunization - Use nested object data directly
+    processedBody.currentImmunization = req.body.currentImmunization || {};
     
-    // Animal Profile - Vaccination Status
-    animalProfile.vaccinationStatus = [];
-    if (req.body.animalImmunized) animalProfile.vaccinationStatus.push('Immunized');
-    if (req.body.animalNotImmunized) animalProfile.vaccinationStatus.push('Not Immunized');
-    
-    // Animal Profile - Ownership
-    animalProfile.ownership = [];
-    if (req.body.animalPet) animalProfile.ownership.push('Pet');
-    if (req.body.animalNeighbor) animalProfile.ownership.push('Neighbor');
-    if (req.body.animalStray) animalProfile.ownership.push('Stray');
-    
-    // Add other animal profile fields
-    animalProfile.othersSpecify = req.body.animalOthersSpecify || '';
-    animalProfile.vaccinationDate = req.body.animalVaccinationDate || '';
-    
-    processedBody.animalProfile = animalProfile;
-    
-    // Patient Immunization - Nested Object
-    const patientImmunization = {
-      dpt: []
-    };
-    if (req.body.dptComplete) patientImmunization.dpt.push('Complete');
-    if (req.body.dptIncomplete) patientImmunization.dpt.push('Incomplete');
-    if (req.body.dptNone) patientImmunization.dpt.push('None');
-    
-    // Patient Immunization - TT (nested object)
-    patientImmunization.tt = [];
-    if (req.body.ttActive) patientImmunization.tt.push('Active');
-    if (req.body.ttPassive) patientImmunization.tt.push('Passive');
-    
-    // Patient Immunization - TT Dates
-    patientImmunization.ttDates = [];
-    if (req.body.tt1Date) patientImmunization.ttDates.push(req.body.tt1Date);
-    if (req.body.tt2Date) patientImmunization.ttDates.push(req.body.tt2Date);
-    if (req.body.tt3Date) patientImmunization.ttDates.push(req.body.tt3Date);
-    
-    // Add other patient immunization fields
-    patientImmunization.dptYearGiven = req.body.dptYearGiven || '';
-    patientImmunization.dptDosesGiven = req.body.dptDosesGiven || '';
-    patientImmunization.skinTest = req.body.skinTest || false;
-    patientImmunization.skinTestTime = req.body.skinTestTime || '';
-    patientImmunization.skinTestReadTime = req.body.skinTestReadTime || '';
-    patientImmunization.skinTestResult = req.body.skinTestResult || '';
-    patientImmunization.tig = req.body.tig || false;
-    patientImmunization.tigDose = req.body.tigDose || '';
-    patientImmunization.tigDate = req.body.tigDate || '';
-    
-    processedBody.patientImmunization = patientImmunization;
-    
-    // Current Immunization - Nested Object
-    const currentImmunization = {
-      type: []
-    };
-    if (req.body.currentActive) currentImmunization.type.push('Active');
-    if (req.body.currentPostExposure) currentImmunization.type.push('Post-exposure');
-    if (req.body.currentPreExposure) currentImmunization.type.push('Pre-exposure');
-    if (req.body.currentPreviouslyImmunized) currentImmunization.type.push('Previously Immunized');
-    
-    // Current Immunization - Vaccine
-    currentImmunization.vaccine = [];
-    if (req.body.currentPvrv) currentImmunization.vaccine.push('PVRV');
-    if (req.body.currentPcec) currentImmunization.vaccine.push('PCEC');
-    
-    // Current Immunization - Route
-    currentImmunization.route = [];
-    if (req.body.currentId) currentImmunization.route.push('ID');
-    if (req.body.currentIm) currentImmunization.route.push('IM');
-    
-    // Current Immunization - Schedule
-    currentImmunization.schedule = [];
-    if (req.body.currentStructured) currentImmunization.schedule.push('Structured');
-    if (req.body.currentUnstructured) currentImmunization.schedule.push('Unstructured');
-    
-    // Add other current immunization fields
-    currentImmunization.passive = req.body.currentPassive || false;
-    currentImmunization.skinTest = req.body.currentSkinTest || false;
-    currentImmunization.skinTestTime = req.body.currentSkinTestTime || '';
-    currentImmunization.skinTestReadTime = req.body.currentSkinTestReadTime || '';
-    currentImmunization.skinTestResult = req.body.currentSkinTestResult || '';
-    currentImmunization.hrig = req.body.currentHrig || false;
-    currentImmunization.hrigDose = req.body.hrigDose || '';
-    currentImmunization.hrigDate = req.body.hrigDate || '';
-    currentImmunization.localInfiltration = req.body.currentLocalInfiltration || false;
-    currentImmunization.medicineUsed = req.body.medicineUsed || '';
-    currentImmunization.branchNo = req.body.branchNo || '';
-    
-    processedBody.currentImmunization = currentImmunization;
-    
-    // Management - Nested Object
-    const management = {
-      washingWound: []
-    };
-    if (req.body.washingWoundYes) management.washingWound.push('Yes');
-    if (req.body.washingWoundNo) management.washingWound.push('No');
-    
-    management.category = [];
-    if (req.body.category1) management.category.push('Category 1');
-    if (req.body.category2) management.category.push('Category 2');
-    if (req.body.category3) management.category.push('Category 3');
-    
-    processedBody.management = management;
+    // Management fields are now sent as individual string fields
+    // No need to process as nested object
     
     // Add other management-related fields
     processedBody.diagnosis = req.body.diagnosis || '';
     processedBody.allergyHistory = req.body.allergyHistory || '';
     processedBody.maintenanceMedications = req.body.maintenanceMedications || '';
     processedBody.managementDetails = req.body.managementDetails || '';
+
+    console.log('Final processed body arrays:', {
+      typeOfExposure: processedBody.typeOfExposure,
+      siteOfBite: processedBody.siteOfBite,
+      natureOfInjury: processedBody.natureOfInjury,
+      externalCause: processedBody.externalCause,
+      placeOfOccurrence: processedBody.placeOfOccurrence,
+      disposition: processedBody.disposition,
+      circumstanceOfBite: processedBody.circumstanceOfBite
+    });
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,

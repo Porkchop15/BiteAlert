@@ -123,17 +123,13 @@ const patientSchema = new mongoose.Schema({
     default: '',
     trim: true
   },
+
   civilStatus: {
     type: String,
     default: '',
     trim: true
   },
   sex: {
-    type: String,
-    default: '',
-    trim: true
-  },
-  address: {
     type: String,
     default: '',
     trim: true

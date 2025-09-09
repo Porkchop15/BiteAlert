@@ -226,7 +226,7 @@ router.post('/register', async (req, res) => {
     console.log('=== REGISTRATION REQUEST ===');
     console.log('Request body:', { ...req.body, password: '[REDACTED]' });
     
-    const { 
+    const {
       firstName, 
       middleName, 
       lastName, 
@@ -235,7 +235,21 @@ router.post('/register', async (req, res) => {
       birthdate, 
       password, 
       role,
-      isVerified
+      isVerified,
+      // Additional profile fields
+      birthPlace,
+      religion,
+      occupation,
+      nationality,
+      sex,
+      civilStatus,
+      houseNo,
+      street,
+      barangay,
+      subdivision,
+      city,
+      province,
+      zipCode
     } = req.body;
     
     // Validate required fields
@@ -299,7 +313,21 @@ router.post('/register', async (req, res) => {
         role: 'patient',
         isVerified: isVerified === true ? true : false,
         verificationToken,
-        tokenExpiry
+        tokenExpiry,
+        // Additional profile fields
+        birthPlace: birthPlace || '',
+        religion: religion || '',
+        occupation: occupation || '',
+        nationality: nationality || '',
+        sex: sex || '',
+        civilStatus: civilStatus || '',
+        houseNo: houseNo || '',
+        street: street || '',
+        barangay: barangay || '',
+        subdivision: subdivision || '',
+        city: city || '',
+        province: province || '',
+        zipCode: zipCode || ''
       });
     }
 

@@ -234,7 +234,8 @@ router.post('/register', async (req, res) => {
       phone, 
       birthdate, 
       password, 
-      role
+      role,
+      isVerified
     } = req.body;
     
     // Validate required fields
@@ -263,10 +264,11 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Generate verification token
-    const verificationToken = generateVerificationToken();
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    // Generate verification token (only if not pre-verified)
+    const verificationToken = isVerified === true ? undefined : generateVerificationToken();
+    const tokenExpiry = isVerified === true ? undefined : new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     console.log('Generated verification token with expiry:', tokenExpiry);
+    console.log('isVerified parameter:', isVerified);
 
     // Create user based on role
     let user;
@@ -281,7 +283,7 @@ router.post('/register', async (req, res) => {
         password,
         role: 'staff',
         isApproved: false,
-        isVerified: false,
+        isVerified: isVerified === true ? true : false,
         verificationToken,
         tokenExpiry
       });
@@ -295,7 +297,7 @@ router.post('/register', async (req, res) => {
         birthdate,
         password,
         role: 'patient',
-        isVerified: false,
+        isVerified: isVerified === true ? true : false,
         verificationToken,
         tokenExpiry
       });
@@ -305,18 +307,26 @@ router.post('/register', async (req, res) => {
     await user.save();
     console.log('User saved successfully');
 
-    // Send verification email
-    try {
-      console.log('Attempting to send verification email...');
-      await sendVerificationEmail(normalizedEmail, verificationToken);
-      console.log('Verification email sent successfully');
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't prevent registration if email fails
+    // Send verification email (only if not pre-verified)
+    if (isVerified !== true && verificationToken) {
+      try {
+        console.log('Attempting to send verification email...');
+        await sendVerificationEmail(normalizedEmail, verificationToken);
+        console.log('Verification email sent successfully');
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't prevent registration if email fails
+      }
+    } else {
+      console.log('Skipping verification email - user is pre-verified');
     }
 
+    const successMessage = isVerified 
+      ? 'Registration successful. Account is verified and ready to use.'
+      : 'Registration successful. Please check your email to verify your account.';
+
     return res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
+      message: successMessage,
       user: {
         id: user._id,
         email: user.email,

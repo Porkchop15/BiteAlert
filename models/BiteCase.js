@@ -379,24 +379,6 @@ const biteCaseSchema = new mongoose.Schema({
     }
    },
    
-   // ERIG Section - Before D0
-   erig: {
-     dateTaken: {
-       type: String,
-       required: false,
-       default: ''
-     },
-     medicineUsed: {
-       type: String,
-       required: false,
-       default: ''
-     },
-     branchNo: {
-       type: String,
-       required: false,
-       default: ''
-     }
-   },
    
    // Current Anti-Rabies Immunization - Using nested objects
   currentImmunization: {
@@ -466,6 +448,26 @@ const biteCaseSchema = new mongoose.Schema({
        default: [],
        enum: ['Structured', 'Unstructured']
      },
+
+          // ERIG Section - Before D0
+      erig: {
+        dateTaken: {
+          type: String,
+          required: false,
+          default: ''
+        },
+        medicineUsed: {
+          type: String,
+          required: false,
+          default: ''
+        },
+        branchNo: {
+          type: String,
+          required: false,
+          default: ''
+        }
+        
+      },
      // Dose-specific medicine and branch tracking
      doseMedicines: [{
        dose: {

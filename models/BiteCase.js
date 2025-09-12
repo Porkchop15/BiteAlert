@@ -466,17 +466,24 @@ const biteCaseSchema = new mongoose.Schema({
        default: [],
        enum: ['Structured', 'Unstructured']
      },
-     // Medicine and Branch fields for current immunization
-     medicineUsed: {
-       type: String,
-       required: false,
-       default: ''
-     },
-     branchNo: {
-       type: String,
-       required: false,
-       default: ''
-     }
+     // Dose-specific medicine and branch tracking
+     doseMedicines: [{
+       dose: {
+         type: String,
+         required: false,
+         default: ''
+       },
+       medicineUsed: {
+         type: String,
+         required: false,
+         default: ''
+       },
+       branchNo: {
+         type: String,
+         required: false,
+         default: ''
+       }
+     }]
    },
   
   status: {

@@ -491,6 +491,18 @@ const biteCaseSchema = new mongoose.Schema({
   status: {
     type: String,
     default: 'in_progress'
+  },
+  
+  // Assessment tracking
+  initiallyAssessedBy: {
+    type: String,
+    required: false,
+    default: ''
+  },
+  finalAssessedBy: {
+    type: String,
+    required: false,
+    default: ''
   }
 }, {
   timestamps: true

@@ -115,7 +115,12 @@ router.post('/', async (req, res) => {
     
     // Management - Use nested object data directly (same as update route)
     processedBody.management = req.body.management || {};
-    
+
+    // Ensure initiallyAssessedBy is never null
+    processedBody.initiallyAssessedBy = (req.body.initiallyAssessedBy === null || req.body.initiallyAssessedBy === undefined)
+      ? ''
+      : req.body.initiallyAssessedBy;
+
     console.log('Backend received array data:', {
       typeOfExposure: req.body.typeOfExposure,
       siteOfBite: req.body.siteOfBite,

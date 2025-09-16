@@ -116,12 +116,17 @@ router.post('/', async (req, res) => {
     // Management - Use nested object data directly (same as update route)
     processedBody.management = req.body.management || {};
 
-    // Ensure initiallyAssessedBy is never null/undefined
+    // Ensure initiallyAssessedBy is populated - prefer body, fallback to headers, else empty
     console.log('Create route - initiallyAssessedBy (raw):', req.body.initiallyAssessedBy);
-    processedBody.initiallyAssessedBy = (req.body.initiallyAssessedBy === null || req.body.initiallyAssessedBy === undefined)
-      ? ''
-      : req.body.initiallyAssessedBy;
-    if (!processedBody.initiallyAssessedBy) processedBody.initiallyAssessedBy = '';
+    let initialAssessor = req.body.initiallyAssessedBy;
+    if (!initialAssessor || initialAssessor === '""') {
+      // Accept staff identity via headers when mobile/web sends it
+      const headerName = req.headers['x-staff-name'] || '';
+      if (headerName && typeof headerName === 'string') {
+        initialAssessor = headerName;
+      }
+    }
+    processedBody.initiallyAssessedBy = initialAssessor || '';
     console.log('Create route - initiallyAssessedBy (processed):', processedBody.initiallyAssessedBy);
 
     console.log('Backend received array data:', {
@@ -234,12 +239,16 @@ router.put('/:id', async (req, res) => {
     processedBody.management = req.body.management || {};
     console.log('Backend received management object:', req.body.management);
 
-    // Ensure initiallyAssessedBy is never null/undefined on update
+    // Ensure initiallyAssessedBy is populated on update - prefer body, fallback to headers
     console.log('Update route - initiallyAssessedBy (raw):', req.body.initiallyAssessedBy);
-    processedBody.initiallyAssessedBy = (req.body.initiallyAssessedBy === null || req.body.initiallyAssessedBy === undefined)
-      ? ''
-      : req.body.initiallyAssessedBy;
-    if (!processedBody.initiallyAssessedBy) processedBody.initiallyAssessedBy = '';
+    let updateAssessor = req.body.initiallyAssessedBy;
+    if (!updateAssessor || updateAssessor === '""') {
+      const headerName = req.headers['x-staff-name'] || '';
+      if (headerName && typeof headerName === 'string') {
+        updateAssessor = headerName;
+      }
+    }
+    processedBody.initiallyAssessedBy = updateAssessor || '';
 
     console.log('Final processed body arrays:', {
       typeOfExposure: processedBody.typeOfExposure,

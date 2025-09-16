@@ -1,4 +1,4 @@
- const express = require('express');
+const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -21,23 +21,22 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = [
-  'https://bitealert-mobile.onrender.com',
-  'http://bitealert-mobile.onrender.com',
   'http://localhost:3000',
   'http://192.168.1.10:3000',
   'http://localhost',
   'http://192.168.1.10',
-  'http://localhost:57935',      // Flutter Web on Chrome
-  'http://127.0.0.1:57935',      // Flutter Web on Chrome (alternate)
+  'http://localhost:52379',      // Flutter Web on Chrome
+  'http://127.0.0.1:52379',      // Flutter Web on Chrome (alternate)
   'capacitor://localhost',
   'ionic://localhost',
   'http://localhost:8080',
   'http://localhost:8100',
   'https://bitealert-yzau.onrender.com',
   'http://bitealert-yzau.onrender.com',
+  'https://bitealert-mobile.onrender.com',
+  'http://bitealert-mobile.onrender.com',
   'http://10.0.2.2:3000',        // Android emulator
-  'http://10.0.2.2'             // Android emulator without port
-
+  'http://10.0.2.2'              // Android emulator without port
 ];
 
 // Middleware
@@ -55,7 +54,7 @@ app.use(cors({
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Staff-Name', 'X-Staff-Center'],
   credentials: true,
   maxAge: 86400 // 24 hours
 }));

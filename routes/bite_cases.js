@@ -116,10 +116,13 @@ router.post('/', async (req, res) => {
     // Management - Use nested object data directly (same as update route)
     processedBody.management = req.body.management || {};
 
-    // Ensure initiallyAssessedBy is never null
+    // Ensure initiallyAssessedBy is never null/undefined
+    console.log('Create route - initiallyAssessedBy (raw):', req.body.initiallyAssessedBy);
     processedBody.initiallyAssessedBy = (req.body.initiallyAssessedBy === null || req.body.initiallyAssessedBy === undefined)
       ? ''
       : req.body.initiallyAssessedBy;
+    if (!processedBody.initiallyAssessedBy) processedBody.initiallyAssessedBy = '';
+    console.log('Create route - initiallyAssessedBy (processed):', processedBody.initiallyAssessedBy);
 
     console.log('Backend received array data:', {
       typeOfExposure: req.body.typeOfExposure,
@@ -230,6 +233,13 @@ router.put('/:id', async (req, res) => {
     // Management - Use nested object data directly
     processedBody.management = req.body.management || {};
     console.log('Backend received management object:', req.body.management);
+
+    // Ensure initiallyAssessedBy is never null/undefined on update
+    console.log('Update route - initiallyAssessedBy (raw):', req.body.initiallyAssessedBy);
+    processedBody.initiallyAssessedBy = (req.body.initiallyAssessedBy === null || req.body.initiallyAssessedBy === undefined)
+      ? ''
+      : req.body.initiallyAssessedBy;
+    if (!processedBody.initiallyAssessedBy) processedBody.initiallyAssessedBy = '';
 
     console.log('Final processed body arrays:', {
       typeOfExposure: processedBody.typeOfExposure,

@@ -176,94 +176,64 @@ router.put('/:id', async (req, res) => {
     console.log('Received request to update bite case:', req.params.id);
     console.log('Update data:', req.body);
     console.log('Backend received philhealthNo:', req.body.philhealthNo);
-
-    // Preprocess the request body
-    const processedBody = {
-      ...req.body,
-      middleName: req.body.middleName || '',
-      philhealthNo: req.body.philhealthNo || ''
-    };
-    console.log('Backend processed philhealthNo:', processedBody.philhealthNo);
-    console.log('Backend received management:', req.body.management);
-    
-    // Use array data directly from frontend
-    // Type of Exposure - Use array data directly
-    processedBody.typeOfExposure = req.body.typeOfExposure || [];
-    console.log('Backend received typeOfExposure:', req.body.typeOfExposure);
-    
-    // Site of Bite - Use array data directly
-    processedBody.siteOfBite = req.body.siteOfBite || [];
-    console.log('Backend received siteOfBite:', req.body.siteOfBite);
-    
-    // Nature of Injury - Use array data directly
-    processedBody.natureOfInjury = req.body.natureOfInjury || [];
-    console.log('Backend received natureOfInjury:', req.body.natureOfInjury);
-    
-    // Add burn and injury details
-    processedBody.burnDegree = req.body.burnDegree || 1;
-    processedBody.burnSite = req.body.burnSite || '';
-    processedBody.othersInjuryDetails = req.body.othersInjuryDetails || '';
-    
-    // External Cause - Use array data directly
-    processedBody.externalCause = req.body.externalCause || [];
-    
-    // Add external cause details
-    processedBody.biteStingDetails = req.body.biteStingDetails || '';
-    processedBody.chemicalSubstanceDetails = req.body.chemicalSubstanceDetails || '';
-    
-    // Place of Occurrence - Use array data directly
-    processedBody.placeOfOccurrence = req.body.placeOfOccurrence || [];
-    
-    // Add place of occurrence details
-    processedBody.placeOthersDetails = req.body.placeOthersDetails || '';
-    
-    // Disposition - Use array data directly
-    processedBody.disposition = req.body.disposition || [];
-    
-    // Add disposition details
-    processedBody.transferredTo = req.body.transferredTo || '';
-    
-    // Circumstance of Bite - Use array data directly
-    processedBody.circumstanceOfBite = req.body.circumstanceOfBite || [];
-    
-    // Animal Profile - Use nested object data directly
-    processedBody.animalProfile = req.body.animalProfile || {};
-    
-    // Patient Immunization - Use nested object data directly
-    processedBody.patientImmunization = req.body.patientImmunization || {};
-    
-    // Current Immunization - Use nested object data directly
-    processedBody.currentImmunization = req.body.currentImmunization || {};
-    
-    // Management - Use nested object data directly
-    processedBody.management = req.body.management || {};
-    console.log('Backend received management object:', req.body.management);
-
-    // Ensure initiallyAssessedBy is populated on update - prefer body, fallback to headers
-    console.log('Update route - initiallyAssessedBy (raw):', req.body.initiallyAssessedBy);
-    let updateAssessor = req.body.initiallyAssessedBy;
-    if (!updateAssessor || updateAssessor === '""') {
-      const headerName = req.headers['x-staff-name'] || '';
-      if (headerName && typeof headerName === 'string') {
-        updateAssessor = headerName;
-      }
+    // Load existing document to preserve unspecified fields
+    const existing = await BiteCase.findById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ message: 'Bite case not found' });
     }
-    processedBody.initiallyAssessedBy = updateAssessor || '';
 
-    console.log('Final processed body arrays:', {
-      typeOfExposure: processedBody.typeOfExposure,
-      siteOfBite: processedBody.siteOfBite,
-      natureOfInjury: processedBody.natureOfInjury,
-      externalCause: processedBody.externalCause,
-      placeOfOccurrence: processedBody.placeOfOccurrence,
-      disposition: processedBody.disposition,
-      circumstanceOfBite: processedBody.circumstanceOfBite,
-      management: processedBody.management
-    });
+    // Build $set update only for fields that are explicitly provided
+    const update = {};
+    const has = (k) => Object.prototype.hasOwnProperty.call(req.body, k);
+
+    // Simple scalar fields
+    [
+      'patientId','registrationNumber','philhealthNo','dateRegistered','arrivalDate','arrivalTime',
+      'firstName','middleName','lastName','civilStatus','birthdate','birthplace','nationality','religion',
+      'occupation','contactNo','houseNo','street','barangay','subdivision','city','province','zipCode',
+      'age','weight','sex','center','animalStatus','remarks','status','othersBiteSpecify','burnDegree','burnSite',
+      'othersInjuryDetails','biteStingDetails','chemicalSubstanceDetails','placeOthersDetails','transferredTo','typeOfProphylaxis',
+      'exposureDate','exposurePlace','exposureType','exposureSource','exposureCategory','genericName','brandName','route','lastArn','completed','tt'
+    ].forEach((field) => { if (has(field)) update[field] = req.body[field]; });
+
+    // Arrays: only update if provided with non-empty array to avoid unintended clearing
+    ['typeOfExposure','siteOfBite','natureOfInjury','externalCause','placeOfOccurrence','disposition','circumstanceOfBite','scheduleDates']
+      .forEach((field) => {
+        if (has(field)) {
+          const val = req.body[field];
+          if (Array.isArray(val) && val.length > 0) {
+            update[field] = val;
+          }
+        }
+      });
+
+    // Nested objects: animalProfile, patientImmunization, currentImmunization, management
+    const mergeNested = (root) => {
+      if (has(root) && req.body[root] && typeof req.body[root] === 'object') {
+        Object.keys(req.body[root]).forEach((k) => {
+          update[`${root}.${k}`] = req.body[root][k];
+        });
+      }
+    };
+    mergeNested('animalProfile');
+    mergeNested('patientImmunization');
+    mergeNested('currentImmunization');
+    mergeNested('management');
+
+    // Ensure initiallyAssessedBy is only set when provided or from header (never blank out)
+    if (has('initiallyAssessedBy')) {
+      const val = (req.body.initiallyAssessedBy || '').toString().trim();
+      if (val) update['initiallyAssessedBy'] = val;
+    } else {
+      const headerName = (req.headers['x-staff-name'] || '').toString().trim();
+      if (headerName) update['initiallyAssessedBy'] = headerName;
+    }
+
+    console.log('Applying $set update keys:', Object.keys(update));
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,
-      processedBody,
+      { $set: update },
       { new: true, runValidators: true }
     );
 

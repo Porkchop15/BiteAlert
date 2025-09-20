@@ -195,37 +195,20 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       console.log('📧 Email response:', info.response);
       return true;
     } catch (sendError) {
-      console.error('❌ Nodemailer email sending failed:', sendError);
-      console.error('Error details:', {
-        code: sendError.code,
-        command: sendError.command,
-        message: sendError.message
-      });
-      throw sendError;
+      console.log('⚠️ Nodemailer email sending failed:', sendError.message);
+      console.log('⚠️ This is expected on cloud hosting platforms like Render');
+      console.log('⚠️ Will return false to trigger fallback service');
+      return false; // Return false instead of throwing
     }
   } catch (error) {
-    console.error('=== EMAIL SENDING ERROR ===');
-    console.error('Error details:', error);
-    console.error('Stack trace:', error.stack);
+    console.log('⚠️ Email service error:', error.message);
+    console.log('⚠️ This is expected on cloud hosting platforms like Render');
+    console.log('⚠️ Will return false to trigger fallback service');
     
     // Don't throw error if email service is not configured
     if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
-      console.warn('⚠️ Email service not configured. Registration will continue without email verification.');
+      console.log('⚠️ Email service not configured. Registration will continue without email verification.');
       return true;
-    }
-    
-    // Handle specific Nodemailer error types
-    if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      console.warn('⚠️ Nodemailer connection timeout. This is common on cloud hosting platforms.');
-      console.warn('⚠️ Will try alternative email services.');
-    } else if (error.code === 'ECONNREFUSED' || error.message.includes('Connection refused')) {
-      console.warn('⚠️ Nodemailer connection refused. Check network/firewall settings.');
-      console.warn('⚠️ Will try alternative email services.');
-    } else if (error.message.includes('Invalid login') || error.message.includes('authentication')) {
-      console.warn('⚠️ Nodemailer authentication failed. Check EMAIL_USER and EMAIL_PASSWORD.');
-      console.warn('⚠️ Will try alternative email services.');
-    } else {
-      console.warn('⚠️ Nodemailer sending failed for unknown reason. Will try alternative email services.');
     }
     
     return false;

@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 const Patient = require('../models/Patient');
-const { generateVerificationToken, sendVerificationEmail, sendEmailViaAPI } = require('../services/emailService');
+const { generateVerificationToken, sendVerificationEmail, sendEmailViaAPI, sendEmailViaHTTP } = require('../services/emailService');
 const path = require('path');
 
 // Debug route to check database contents
@@ -345,6 +345,12 @@ router.post('/register', async (req, res) => {
         if (!emailSent) {
           console.log('Main email service failed, trying alternative service...');
           emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
+          
+          // If SendGrid also fails, try HTTP service
+          if (!emailSent) {
+            console.log('SendGrid service failed, trying HTTP service...');
+            emailSent = await sendEmailViaHTTP(normalizedEmail, verificationToken);
+          }
         }
         
         if (emailSent) {
@@ -480,6 +486,12 @@ router.post('/forgot-password', async (req, res) => {
       if (!emailSent) {
         console.log('Main email service failed, trying alternative service...');
         emailSent = await sendEmailViaAPI(normalizedEmail, otp, 'password-reset');
+        
+        // If SendGrid also fails, try HTTP service
+        if (!emailSent) {
+          console.log('SendGrid service failed, trying HTTP service...');
+          emailSent = await sendEmailViaHTTP(normalizedEmail, otp, 'password-reset');
+        }
       }
       
       if (emailSent) {
@@ -600,6 +612,60 @@ router.post('/reset-password', async (req, res) => {
       });
     }
     return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Manual verification endpoint (for testing when emails don't work)
+router.get('/manual-verify/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('=== MANUAL VERIFICATION REQUEST ===');
+    console.log('Email:', normalizedEmail);
+    
+    // Find user in both collections
+    const staff = await Staff.findOne({ email: normalizedEmail });
+    const patient = await Patient.findOne({ email: normalizedEmail });
+    
+    const user = staff || patient;
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found',
+        email: normalizedEmail 
+      });
+    }
+    
+    if (user.isVerified) {
+      return res.json({ 
+        message: 'Account is already verified',
+        email: normalizedEmail,
+        isVerified: true
+      });
+    }
+    
+    // Manually verify the account
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.tokenExpiry = undefined;
+    await user.save();
+    
+    console.log('✅ Account manually verified:', normalizedEmail);
+    
+    return res.json({ 
+      message: 'Account successfully verified',
+      email: normalizedEmail,
+      isVerified: true,
+      userId: user.staffId || user.patientId
+    });
+    
+  } catch (error) {
+    console.error('Manual verification error:', error);
+    return res.status(500).json({ 
+      message: 'Manual verification failed', 
+      error: error.message 
+    });
   }
 });
 

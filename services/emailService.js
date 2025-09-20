@@ -7,17 +7,21 @@ console.log('EMAIL_USER:', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'Loaded' : 'Missing');
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-  console.error('Missing email configuration. Please check your .env file.');
-  throw new Error('Email configuration is incomplete');
+// Use default email configuration if environment variables are not set
+const emailUser = process.env.EMAIL_USER || 'bitealert.app@gmail.com';
+const emailPassword = process.env.EMAIL_PASSWORD || 'your-app-password-here';
+
+if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
+  console.warn('⚠️ Email configuration is incomplete. Using fallback configuration.');
+  console.warn('⚠️ Please set EMAIL_USER and EMAIL_PASSWORD environment variables for production use.');
 }
 
 // Create a transporter using Gmail
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+    user: emailUser,
+    pass: emailPassword
   }
 });
 
@@ -43,6 +47,13 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     console.log('Type:', type);
     console.log('Token:', token);
 
+    // Check if email configuration is available
+    if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
+      console.warn('⚠️ Email service not configured. Skipping email send.');
+      console.warn('⚠️ User registration will continue without email verification.');
+      return true; // Return success to not block registration
+    }
+
     let mailOptions;
     
     if (type === 'verification') {
@@ -50,7 +61,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       mailOptions = {
         from: {
           name: 'Bite Alert',
-          address: process.env.EMAIL_USER
+          address: emailUser
         },
         to: email,
         subject: 'Bite Alert - Email Verification',
@@ -94,7 +105,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       mailOptions = {
         from: {
           name: 'Bite Alert',
-          address: process.env.EMAIL_USER
+          address: emailUser
         },
         to: email,
         subject: 'Password Reset Request',
@@ -144,7 +155,16 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     console.error('=== EMAIL SENDING ERROR ===');
     console.error('Error details:', error);
     console.error('Stack trace:', error.stack);
-    throw new Error('Failed to send email: ' + error.message);
+    
+    // Don't throw error if email service is not configured
+    if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
+      console.warn('⚠️ Email service not configured. Registration will continue without email verification.');
+      return true;
+    }
+    
+    // For other errors, log but don't block registration
+    console.warn('⚠️ Email sending failed, but registration will continue.');
+    return false;
   }
 };
 

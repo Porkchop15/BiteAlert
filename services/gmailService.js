@@ -186,22 +186,25 @@ const sendGmailVerification = async (email, token, type = 'verification') => {
   }
 };
 
-// Alternative method using fetch to send email via external service
+// Alternative method using webhook to send email via external service
 const sendEmailViaExternalService = async (email, token, type = 'verification') => {
   try {
-    console.log('=== EXTERNAL EMAIL SERVICE ===');
+    console.log('=== WEBHOOK EMAIL SERVICE ===');
     console.log('To:', email);
     console.log('Type:', type);
     console.log('Token:', token);
     
     const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${token}`;
     
-    // Use a simple email service that works on cloud hosting
-    // We'll use a webhook-based approach
-    const emailData = {
-      to: email,
-      subject: type === 'verification' ? 'Bite Alert - Email Verification' : 'Bite Alert - Password Reset',
-      html: type === 'verification' ? `
+    // Use the Gmail webhook service
+    const webhookUrl = 'https://bitealert-gmail-webhook.onrender.com/send-email';
+    
+    let emailContent;
+    let subject;
+    
+    if (type === 'verification') {
+      subject = 'Bite Alert - Email Verification';
+      emailContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 20px;">
             <h1 style="color: #7D0C0C; margin: 0; font-size: 24px;">Bite Alert</h1>
@@ -226,8 +229,18 @@ const sendEmailViaExternalService = async (email, token, type = 'verification') 
               If you did not create an account with Bite Alert, please ignore this email.
             </p>
           </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+            <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">
+              This is an automated message, please do not reply to this email.<br>
+              © ${new Date().getFullYear()} Bite Alert. All rights reserved.
+            </p>
+          </div>
         </div>
-      ` : `
+      `;
+    } else if (type === 'password-reset') {
+      subject = 'Bite Alert - Password Reset';
+      emailContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 20px;">
             <h1 style="color: #7D0C0C; margin: 0; font-size: 24px;">Bite Alert</h1>
@@ -245,39 +258,61 @@ const sendEmailViaExternalService = async (email, token, type = 'verification') 
               This code will expire in 5 minutes.
             </p>
           </div>
+
+          <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 20px;">
+            <p style="font-size: 14px; color: #666666; text-align: center; margin: 0;">
+              If you did not request this password reset, please ignore this email.
+            </p>
+          </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+            <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">
+              This is an automated message, please do not reply to this email.<br>
+              © ${new Date().getFullYear()} Bite Alert. All rights reserved.
+            </p>
+          </div>
         </div>
-      `,
-      from: 'noreply@bitealert.com'
-    };
+      `;
+    }
     
-    // Try to send via a simple email service
-    // For now, we'll use a webhook approach that actually sends emails
+    // Send email via webhook
     try {
-      // Use a simple email service that works on cloud hosting
-      const webhookUrl = 'https://api.emailjs.com/api/v1.0/email/send';
+      console.log('📧 Attempting to send email via Gmail webhook...');
       
-      // For now, let's use a simple approach - we'll create a webhook service
-      // that can send emails using the Gmail credentials
+      const emailData = {
+        to: email,
+        subject: subject,
+        html: emailContent,
+        type: type,
+        verification_url: type === 'verification' ? verificationUrl : null,
+        otp_code: type === 'password-reset' ? token : null
+      };
       
-      console.log('📧 Attempting to send email via external service...');
+      // Use fetch to send email via webhook
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData)
+      });
       
-      // Simulate sending email (in a real implementation, this would call an external service)
-      console.log('📧 Email would be sent with the following details:');
-      console.log('To:', email);
-      console.log('Subject:', emailData.subject);
-      console.log('Verification URL:', verificationUrl);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Email sent successfully via Gmail webhook:', result.messageId);
+        return true;
+      } else {
+        console.error('❌ Gmail webhook failed:', response.status, response.statusText);
+        return false;
+      }
       
-      // For now, return true to indicate success
-      // In a real implementation, this would actually send the email
-      return true;
-      
-    } catch (emailError) {
-      console.error('External email service error:', emailError);
+    } catch (webhookError) {
+      console.error('Gmail webhook error:', webhookError);
       return false;
     }
     
   } catch (error) {
-    console.error('External email service failed:', error);
+    console.error('Webhook email service failed:', error);
     return false;
   }
 };

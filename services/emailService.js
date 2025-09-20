@@ -22,76 +22,19 @@ if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') 
 let transporter;
 
 try {
-  // Try multiple SMTP configurations for better cloud hosting compatibility
-  const smtpConfigs = [
-    // Gmail SMTP
-    {
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: emailUser,
-        pass: emailPassword
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: emailUser,
+      pass: emailPassword
     },
-    // Alternative Gmail configuration
-    {
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: emailUser,
-        pass: emailPassword
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    },
-    // Outlook SMTP (alternative)
-    {
-      service: 'hotmail',
-      host: 'smtp-mail.outlook.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: emailUser,
-        pass: emailPassword
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
+    tls: {
+      rejectUnauthorized: false
     }
-  ];
-
-  // Try to create transporter with the first available configuration
-  for (let i = 0; i < smtpConfigs.length; i++) {
-    try {
-      const config = {
-        ...smtpConfigs[i],
-        connectionTimeout: 10000,  // 10 seconds
-        greetingTimeout: 10000,    // 10 seconds
-        socketTimeout: 10000,      // 10 seconds
-        pool: false, // Disable pooling for cloud hosting
-        maxConnections: 1,
-        maxMessages: 1,
-        rateDelta: 10000, // 10 seconds
-        rateLimit: 1 // max 1 message per rateDelta
-      };
-      
-      transporter = nodemailer.createTransport(config);
-      console.log(`📧 Created transporter with config ${i + 1}: ${config.service || config.host}`);
-      break;
-    } catch (configError) {
-      console.log(`⚠️ Config ${i + 1} failed:`, configError.message);
-      if (i === smtpConfigs.length - 1) {
-        throw configError;
-      }
-    }
-  }
+  });
 } catch (transporterError) {
   console.error('Failed to create email transporter:', transporterError);
   transporter = null;
@@ -137,7 +80,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       return true; // Return success to not block registration
     }
 
-    // Try to use Nodemailer with proper cloud hosting configuration
+    // Use Nodemailer for email sending
     console.log('📧 Attempting to send email via Nodemailer...');
 
     let mailOptions;
@@ -243,7 +186,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     // Add timeout wrapper for email sending
     const emailPromise = transporter.sendMail(mailOptions);
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Email sending timeout')), 15000); // 15 second timeout
+      setTimeout(() => reject(new Error('Email sending timeout')), 30000); // 30 second timeout
     });
     
     try {

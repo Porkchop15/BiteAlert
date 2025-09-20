@@ -6,6 +6,8 @@ console.log('=== EMAIL SERVICE CONFIGURATION ===');
 console.log('EMAIL_USER:', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'Loaded' : 'Missing');
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Platform:', process.platform);
 
 // Use default email configuration if environment variables are not set
 const emailUser = process.env.EMAIL_USER || 'bitealert.app@gmail.com';
@@ -16,23 +18,48 @@ if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') 
   console.warn('⚠️ Please set EMAIL_USER and EMAIL_PASSWORD environment variables for production use.');
 }
 
-// Create a transporter using Gmail
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: emailUser,
-    pass: emailPassword
-  }
-});
+// Create a transporter using Gmail with better configuration for cloud hosting
+let transporter;
+
+try {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: emailUser,
+      pass: emailPassword
+    },
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 30000, // 30 seconds (reduced for cloud hosting)
+    greetingTimeout: 15000,   // 15 seconds
+    socketTimeout: 30000,     // 30 seconds
+    pool: false, // Disable pooling for cloud hosting
+    maxConnections: 1,
+    maxMessages: 1,
+    rateDelta: 10000, // 10 seconds
+    rateLimit: 1 // max 1 message per rateDelta
+  });
+} catch (transporterError) {
+  console.error('Failed to create email transporter:', transporterError);
+  transporter = null;
+}
 
 // Verify transporter configuration
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('Email transporter verification failed:', error);
-  } else {
-    console.log('Email transporter is ready to send messages');
-  }
-});
+if (transporter) {
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('Email transporter verification failed:', error);
+    } else {
+      console.log('Email transporter is ready to send messages');
+    }
+  });
+} else {
+  console.warn('⚠️ Email transporter not available - email service disabled');
+}
 
 // Generate verification token
 const generateVerificationToken = () => {
@@ -50,6 +77,13 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     // Check if email configuration is available
     if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
       console.warn('⚠️ Email service not configured. Skipping email send.');
+      console.warn('⚠️ User registration will continue without email verification.');
+      return true; // Return success to not block registration
+    }
+
+    // Check if transporter is available
+    if (!transporter) {
+      console.warn('⚠️ Email transporter not available. Skipping email send.');
       console.warn('⚠️ User registration will continue without email verification.');
       return true; // Return success to not block registration
     }
@@ -148,9 +182,21 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     }
 
     console.log('Sending email...');
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    return true;
+    
+    // Add timeout wrapper for email sending
+    const emailPromise = transporter.sendMail(mailOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Email sending timeout')), 30000); // 30 second timeout
+    });
+    
+    try {
+      const info = await Promise.race([emailPromise, timeoutPromise]);
+      console.log('Email sent successfully:', info.messageId);
+      return true;
+    } catch (sendError) {
+      console.error('Email sending failed:', sendError);
+      throw sendError;
+    }
   } catch (error) {
     console.error('=== EMAIL SENDING ERROR ===');
     console.error('Error details:', error);
@@ -162,13 +208,52 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       return true;
     }
     
-    // For other errors, log but don't block registration
-    console.warn('⚠️ Email sending failed, but registration will continue.');
+    // Handle specific error types
+    if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+      console.warn('⚠️ Email service timeout. This is common on cloud hosting platforms.');
+      console.warn('⚠️ Registration will continue without email verification.');
+    } else if (error.code === 'ECONNREFUSED' || error.message.includes('Connection refused')) {
+      console.warn('⚠️ Email service connection refused. Check network/firewall settings.');
+      console.warn('⚠️ Registration will continue without email verification.');
+    } else if (error.message.includes('Invalid login')) {
+      console.warn('⚠️ Email authentication failed. Check EMAIL_USER and EMAIL_PASSWORD.');
+      console.warn('⚠️ Registration will continue without email verification.');
+    } else {
+      console.warn('⚠️ Email sending failed for unknown reason, but registration will continue.');
+    }
+    
+    return false;
+  }
+};
+
+// Alternative email service using a simpler approach for cloud hosting
+const sendEmailViaAPI = async (email, token, type = 'verification') => {
+  try {
+    console.log('=== ATTEMPTING ALTERNATIVE EMAIL SERVICE ===');
+    
+    // For now, just log the email that would be sent
+    // In a real implementation, you could use services like:
+    // - SendGrid API
+    // - Mailgun API  
+    // - AWS SES
+    // - Or any other email service that works better on cloud platforms
+    
+    console.log('Email would be sent to:', email);
+    console.log('Token:', token);
+    console.log('Type:', type);
+    
+    // For development/testing, we'll just return success
+    console.log('⚠️ Alternative email service not implemented - using fallback');
+    return true;
+    
+  } catch (error) {
+    console.error('Alternative email service failed:', error);
     return false;
   }
 };
 
 module.exports = {
   generateVerificationToken,
-  sendVerificationEmail
+  sendVerificationEmail,
+  sendEmailViaAPI
 }; 

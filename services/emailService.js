@@ -226,28 +226,136 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
   }
 };
 
-// Alternative email service using a simpler approach for cloud hosting
+// Alternative email service using SendGrid API (cloud-friendly)
 const sendEmailViaAPI = async (email, token, type = 'verification') => {
   try {
-    console.log('=== ATTEMPTING ALTERNATIVE EMAIL SERVICE ===');
-    
-    // For now, just log the email that would be sent
-    // In a real implementation, you could use services like:
-    // - SendGrid API
-    // - Mailgun API  
-    // - AWS SES
-    // - Or any other email service that works better on cloud platforms
-    
-    console.log('Email would be sent to:', email);
-    console.log('Token:', token);
+    console.log('=== ATTEMPTING SENDGRID EMAIL SERVICE ===');
+    console.log('To:', email);
     console.log('Type:', type);
+    console.log('Token:', token);
     
-    // For development/testing, we'll just return success
-    console.log('⚠️ Alternative email service not implemented - using fallback');
+    // Check if SendGrid API key is configured
+    const sendGridApiKey = process.env.SENDGRID_API_KEY;
+    if (!sendGridApiKey) {
+      console.warn('⚠️ SendGrid API key not configured. Using fallback.');
+      return true; // Return success to not block registration
+    }
+
+    // Import SendGrid dynamically to avoid errors if not installed
+    let sgMail;
+    try {
+      sgMail = require('@sendgrid/mail');
+    } catch (importError) {
+      console.warn('⚠️ SendGrid package not installed. Using fallback.');
+      return true;
+    }
+
+    sgMail.setApiKey(sendGridApiKey);
+
+    let emailContent;
+    if (type === 'verification') {
+      emailContent = {
+        to: email,
+        from: {
+          email: 'noreply@bitealert.com',
+          name: 'Bite Alert'
+        },
+        subject: 'Bite Alert - Email Verification',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #7D0C0C; margin: 0; font-size: 24px;">Bite Alert</h1>
+              <p style="color: #666666; margin: 5px 0;">Your Health Companion</p>
+            </div>
+            
+            <div style="background-color: #f8f8f8; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+              <p style="font-size: 16px; line-height: 1.5; color: #333333; margin: 0;">
+                Thank you for registering with Bite Alert. To complete your registration, please verify your email address by clicking the button below:
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://bitealert-yzau.onrender.com/verify-email/${token}" 
+                 style="background-color: #7D0C0C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                Verify Email Address
+              </a>
+            </div>
+
+            <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 20px;">
+              <p style="font-size: 14px; color: #666666; text-align: center; margin: 0;">
+                If you did not create an account with Bite Alert, please ignore this email.
+              </p>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+              <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">
+                This is an automated message, please do not reply to this email.<br>
+                © ${new Date().getFullYear()} Bite Alert. All rights reserved.
+              </p>
+            </div>
+          </div>
+        `
+      };
+    } else if (type === 'password-reset') {
+      emailContent = {
+        to: email,
+        from: {
+          email: 'noreply@bitealert.com',
+          name: 'Bite Alert'
+        },
+        subject: 'Password Reset Request',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #7D0C0C; margin: 0; font-size: 24px;">Bite Alert</h1>
+              <p style="color: #666666; margin: 5px 0;">Your Health Companion</p>
+            </div>
+            
+            <div style="background-color: #f8f8f8; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+              <p style="font-size: 16px; line-height: 1.5; color: #333333; margin: 0;">
+                You have requested to reset your password. Please use the following verification code:
+              </p>
+              <div style="text-align: center; margin: 20px 0;">
+                <span style="font-size: 24px; font-weight: bold; color: #7D0C0C; letter-spacing: 2px;">${token}</span>
+              </div>
+              <p style="font-size: 14px; color: #666666; margin: 0;">
+                This code will expire in 5 minutes.
+              </p>
+            </div>
+
+            <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 20px;">
+              <p style="font-size: 14px; color: #666666; text-align: center; margin: 0;">
+                If you did not request this password reset, please ignore this email.
+              </p>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+              <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">
+                This is an automated message, please do not reply to this email.<br>
+                © ${new Date().getFullYear()} Bite Alert. All rights reserved.
+              </p>
+            </div>
+          </div>
+        `
+      };
+    } else {
+      throw new Error('Invalid email type');
+    }
+
+    console.log('Sending email via SendGrid...');
+    const response = await sgMail.send(emailContent);
+    console.log('✅ SendGrid email sent successfully:', response[0].statusCode);
     return true;
     
   } catch (error) {
-    console.error('Alternative email service failed:', error);
+    console.error('❌ SendGrid email service failed:', error);
+    
+    // If SendGrid fails, log the email details for manual sending
+    console.log('📧 Email details for manual sending:');
+    console.log('To:', email);
+    console.log('Type:', type);
+    console.log('Token:', token);
+    
     return false;
   }
 };

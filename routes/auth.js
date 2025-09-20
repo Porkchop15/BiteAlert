@@ -335,34 +335,40 @@ router.post('/register', async (req, res) => {
     await user.save();
     console.log('User saved successfully');
 
-    // Send verification email (only if not pre-verified)
+    // Send verification email (only if not pre-verified) - NON-BLOCKING
     if (isVerified !== true && verificationToken) {
-      try {
-        console.log('Attempting to send verification email...');
-        let emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
-        
-        // If main email service fails, try alternative service
-        if (!emailSent) {
-          console.log('Main email service failed, trying alternative service...');
-          emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
+      // Start email sending in background without waiting
+      console.log('Starting verification email process in background...');
+      
+      // Use setImmediate to make this truly non-blocking
+      setImmediate(async () => {
+        try {
+          console.log('Attempting to send verification email...');
+          let emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
           
-          // If SendGrid also fails, try HTTP service
+          // If main email service fails, try alternative service
           if (!emailSent) {
-            console.log('SendGrid service failed, trying HTTP service...');
-            emailSent = await sendEmailViaHTTP(normalizedEmail, verificationToken);
+            console.log('Main email service failed, trying alternative service...');
+            emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
+            
+            // If SendGrid also fails, try HTTP service
+            if (!emailSent) {
+              console.log('SendGrid service failed, trying HTTP service...');
+              emailSent = await sendEmailViaHTTP(normalizedEmail, verificationToken);
+            }
           }
+          
+          if (emailSent) {
+            console.log('Verification email sent successfully');
+          } else {
+            console.log('All email services failed, but registration continues');
+          }
+        } catch (emailError) {
+          console.error('Failed to send verification email:', emailError);
+          // Don't prevent registration if email fails
+          console.log('Registration will continue despite email failure');
         }
-        
-        if (emailSent) {
-          console.log('Verification email sent successfully');
-        } else {
-          console.log('All email services failed, but registration continues');
-        }
-      } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
-        // Don't prevent registration if email fails
-        console.log('Registration will continue despite email failure');
-      }
+      });
     } else {
       console.log('Skipping verification email - user is pre-verified');
     }
@@ -477,43 +483,44 @@ router.post('/forgot-password', async (req, res) => {
     console.log('OTP stored successfully');
     console.log('Current OTP store contents:', Array.from(otpStore.entries()));
 
-    // Send OTP via email
-    try {
-      console.log('Attempting to send OTP email...');
-      let emailSent = await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
-      
-      // If main email service fails, try alternative service
-      if (!emailSent) {
-        console.log('Main email service failed, trying alternative service...');
-        emailSent = await sendEmailViaAPI(normalizedEmail, otp, 'password-reset');
+    // Send OTP via email - NON-BLOCKING
+    console.log('Starting OTP email process in background...');
+    
+    // Start email sending in background without waiting
+    setImmediate(async () => {
+      try {
+        console.log('Attempting to send OTP email...');
+        let emailSent = await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
         
-        // If SendGrid also fails, try HTTP service
+        // If main email service fails, try alternative service
         if (!emailSent) {
-          console.log('SendGrid service failed, trying HTTP service...');
-          emailSent = await sendEmailViaHTTP(normalizedEmail, otp, 'password-reset');
+          console.log('Main email service failed, trying alternative service...');
+          emailSent = await sendEmailViaAPI(normalizedEmail, otp, 'password-reset');
+          
+          // If SendGrid also fails, try HTTP service
+          if (!emailSent) {
+            console.log('SendGrid service failed, trying HTTP service...');
+            emailSent = await sendEmailViaHTTP(normalizedEmail, otp, 'password-reset');
+          }
         }
+        
+        if (emailSent) {
+          console.log('OTP email sent successfully');
+        } else {
+          console.log('All email services failed, but OTP is still valid');
+        }
+      } catch (error) {
+        console.error('Error sending OTP:', error);
+        console.log('Email sending failed, but OTP is still valid:', otp);
       }
-      
-      if (emailSent) {
-        console.log('OTP email sent successfully');
-        return res.json({ message: 'OTP sent successfully' });
-      } else {
-        console.log('All email services failed, but OTP is still valid');
-        // Still return success since OTP is stored and can be used
-        return res.json({ 
-          message: 'OTP generated successfully. Please contact support if you do not receive the email.',
-          otp: otp // Include OTP in response for testing (remove in production)
-        });
-      }
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      // Don't return error, just log it and provide OTP in response
-      console.log('Email sending failed, but OTP is still valid:', otp);
-      return res.json({ 
-        message: 'OTP generated successfully. Please contact support if you do not receive the email.',
-        otp: otp // Include OTP in response for testing (remove in production)
-      });
-    }
+    });
+    
+    // Return immediately without waiting for email
+    console.log('OTP generated successfully, returning response immediately');
+    return res.json({ 
+      message: 'OTP sent successfully. Please check your email.',
+      otp: otp // Include OTP in response for testing (remove in production)
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     return res.status(500).json({ message: 'Server error' });

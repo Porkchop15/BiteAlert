@@ -34,9 +34,9 @@ try {
     tls: {
       rejectUnauthorized: false
     },
-    connectionTimeout: 30000, // 30 seconds (reduced for cloud hosting)
-    greetingTimeout: 15000,   // 15 seconds
-    socketTimeout: 30000,     // 30 seconds
+    connectionTimeout: 5000,  // 5 seconds (very fast timeout for cloud hosting)
+    greetingTimeout: 5000,    // 5 seconds
+    socketTimeout: 5000,      // 5 seconds
     pool: false, // Disable pooling for cloud hosting
     maxConnections: 1,
     maxMessages: 1,
@@ -86,6 +86,12 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       console.warn('⚠️ Email transporter not available. Skipping email send.');
       console.warn('⚠️ User registration will continue without email verification.');
       return true; // Return success to not block registration
+    }
+
+    // Skip email sending on cloud hosting to avoid delays
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+      console.log('⚠️ Skipping email sending on cloud hosting to avoid delays');
+      return false; // Return false to trigger fallback services
     }
 
     let mailOptions;
@@ -186,7 +192,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     // Add timeout wrapper for email sending
     const emailPromise = transporter.sendMail(mailOptions);
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Email sending timeout')), 30000); // 30 second timeout
+      setTimeout(() => reject(new Error('Email sending timeout')), 5000); // 5 second timeout
     });
     
     try {

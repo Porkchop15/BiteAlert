@@ -215,15 +215,37 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
   }
 };
 
-// Simple fallback email service
+// Gmail fallback email service
 const sendEmailViaAPI = async (email, token, type = 'verification') => {
   try {
-    console.log('=== ATTEMPTING FALLBACK EMAIL SERVICE ===');
+    console.log('=== ATTEMPTING GMAIL FALLBACK SERVICE ===');
     console.log('To:', email);
     console.log('Type:', type);
     console.log('Token:', token);
     
-    // Simple fallback - just log the verification details
+    // Import the Gmail service
+    const { sendGmailVerification, sendEmailViaExternalService } = require('./gmailService');
+    
+    // Try Gmail service first
+    console.log('📧 Trying Gmail service...');
+    let emailSent = await sendGmailVerification(email, token, type);
+    
+    if (emailSent) {
+      console.log('✅ Gmail service succeeded');
+      return true;
+    }
+    
+    // If Gmail fails, try external service
+    console.log('📧 Gmail service failed, trying external service...');
+    emailSent = await sendEmailViaExternalService(email, token, type);
+    
+    if (emailSent) {
+      console.log('✅ External service succeeded');
+      return true;
+    }
+    
+    // If both fail, log the verification details as fallback
+    console.log('📧 Both services failed, logging verification details...');
     const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${token}`;
     
     console.log('📧 FALLBACK EMAIL SERVICE:');
@@ -243,7 +265,7 @@ const sendEmailViaAPI = async (email, token, type = 'verification') => {
     return true; // Return success to not block registration
     
   } catch (error) {
-    console.error('❌ Fallback email service failed:', error);
+    console.error('❌ Gmail fallback service failed:', error);
     return false;
   }
 };

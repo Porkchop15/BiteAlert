@@ -339,11 +339,16 @@ router.post('/register', async (req, res) => {
     if (isVerified !== true && verificationToken) {
       try {
         console.log('Attempting to send verification email...');
-        await sendVerificationEmail(normalizedEmail, verificationToken);
-        console.log('Verification email sent successfully');
+        const emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
+        if (emailSent) {
+          console.log('Verification email sent successfully');
+        } else {
+          console.log('Verification email sending failed, but registration continues');
+        }
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);
         // Don't prevent registration if email fails
+        console.log('Registration will continue despite email failure');
       }
     } else {
       console.log('Skipping verification email - user is pre-verified');

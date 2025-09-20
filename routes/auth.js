@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 const Patient = require('../models/Patient');
-const { generateVerificationToken, sendVerificationEmail, sendEmailViaAPI, sendEmailViaHTTP } = require('../services/emailService');
+const { generateVerificationToken, sendVerificationEmail, sendEmailViaAPI } = require('../services/emailService');
 const path = require('path');
 
 // Debug route to check database contents
@@ -346,24 +346,11 @@ router.post('/register', async (req, res) => {
           console.log('Attempting to send verification email...');
           let emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
           
-          // If main email service fails, try alternative service
-          if (!emailSent) {
-            console.log('Main email service failed, trying alternative service...');
-            emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
-            
-          // If SendGrid also fails, log the verification link for manual testing
-          if (!emailSent) {
-            console.log('SendGrid service failed, logging verification link for manual testing...');
-            const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${verificationToken}`;
-            console.log('📧 VERIFICATION EMAIL NOT SENT - BUT HERE IS THE LINK:');
-            console.log('🔗 Verification URL:', verificationUrl);
-            console.log('📧 Email:', normalizedEmail);
-            console.log('🔑 Token:', verificationToken);
-            console.log('💡 You can manually click this link to verify the account');
-            console.log('📧 END VERIFICATION EMAIL INFO');
-            emailSent = true; // Consider this a success for testing
-          }
-          }
+        // If main email service fails, try fallback service
+        if (!emailSent) {
+          console.log('Main email service failed, trying fallback service...');
+          emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
+        }
           
           if (emailSent) {
             console.log('Verification email sent successfully');
@@ -499,21 +486,10 @@ router.post('/forgot-password', async (req, res) => {
         console.log('Attempting to send OTP email...');
         let emailSent = await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
         
-        // If main email service fails, try alternative service
+        // If main email service fails, try fallback service
         if (!emailSent) {
-          console.log('Main email service failed, trying alternative service...');
+          console.log('Main email service failed, trying fallback service...');
           emailSent = await sendEmailViaAPI(normalizedEmail, otp, 'password-reset');
-          
-        // If SendGrid also fails, log the OTP for manual testing
-        if (!emailSent) {
-          console.log('SendGrid service failed, logging OTP for manual testing...');
-          console.log('📧 PASSWORD RESET EMAIL NOT SENT - BUT HERE IS THE OTP:');
-          console.log('🔑 OTP Code:', otp);
-          console.log('📧 Email:', normalizedEmail);
-          console.log('💡 Use this OTP code in the app to reset password');
-          console.log('📧 END PASSWORD RESET EMAIL INFO');
-          emailSent = true; // Consider this a success for testing
-        }
         }
         
         if (emailSent) {

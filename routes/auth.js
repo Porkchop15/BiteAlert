@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 const Patient = require('../models/Patient');
-const { generateVerificationToken, sendVerificationEmail } = require('../services/emailService');
+const { generateVerificationToken, sendVerificationEmail, sendEmailViaAPI } = require('../services/emailService');
 const path = require('path');
 
 // Debug route to check database contents
@@ -339,11 +339,18 @@ router.post('/register', async (req, res) => {
     if (isVerified !== true && verificationToken) {
       try {
         console.log('Attempting to send verification email...');
-        const emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
+        let emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
+        
+        // If main email service fails, try alternative service
+        if (!emailSent) {
+          console.log('Main email service failed, trying alternative service...');
+          emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
+        }
+        
         if (emailSent) {
           console.log('Verification email sent successfully');
         } else {
-          console.log('Verification email sending failed, but registration continues');
+          console.log('All email services failed, but registration continues');
         }
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);

@@ -238,6 +238,24 @@ const sendEmailViaAPI = async (email, token, type = 'verification') => {
     const sendGridApiKey = process.env.SENDGRID_API_KEY;
     if (!sendGridApiKey) {
       console.warn('⚠️ SendGrid API key not configured. Using fallback.');
+      
+      // Log the verification link for testing
+      if (type === 'verification') {
+        const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${token}`;
+        console.log('📧 VERIFICATION EMAIL NOT SENT - BUT HERE IS THE LINK:');
+        console.log('🔗 Verification URL:', verificationUrl);
+        console.log('📧 Email:', email);
+        console.log('🔑 Token:', token);
+        console.log('💡 You can manually click this link to verify the account');
+        console.log('📧 END VERIFICATION EMAIL INFO');
+      } else if (type === 'password-reset') {
+        console.log('📧 PASSWORD RESET EMAIL NOT SENT - BUT HERE IS THE OTP:');
+        console.log('🔑 OTP Code:', token);
+        console.log('📧 Email:', email);
+        console.log('💡 Use this OTP code in the app to reset password');
+        console.log('📧 END PASSWORD RESET EMAIL INFO');
+      }
+      
       return true; // Return success to not block registration
     }
 
@@ -360,8 +378,48 @@ const sendEmailViaAPI = async (email, token, type = 'verification') => {
   }
 };
 
+// Simple email service using a basic HTTP approach (for testing)
+const sendEmailViaHTTP = async (email, token, type = 'verification') => {
+  try {
+    console.log('=== ATTEMPTING HTTP EMAIL SERVICE ===');
+    console.log('To:', email);
+    console.log('Type:', type);
+    console.log('Token:', token);
+    
+    // For now, just log the email details
+    // In a real implementation, you could use services like:
+    // - EmailJS
+    // - Formspree
+    // - Netlify Forms
+    // - Any other HTTP-based email service
+    
+    if (type === 'verification') {
+      const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${token}`;
+      console.log('📧 VERIFICATION EMAIL DETAILS:');
+      console.log('🔗 Verification URL:', verificationUrl);
+      console.log('📧 Email:', email);
+      console.log('🔑 Token:', token);
+      console.log('💡 Click the URL above to verify the account');
+      console.log('📧 END VERIFICATION EMAIL DETAILS');
+    } else if (type === 'password-reset') {
+      console.log('📧 PASSWORD RESET EMAIL DETAILS:');
+      console.log('🔑 OTP Code:', token);
+      console.log('📧 Email:', email);
+      console.log('💡 Use this OTP code in the app to reset password');
+      console.log('📧 END PASSWORD RESET EMAIL DETAILS');
+    }
+    
+    return true; // Return success
+    
+  } catch (error) {
+    console.error('HTTP email service failed:', error);
+    return false;
+  }
+};
+
 module.exports = {
   generateVerificationToken,
   sendVerificationEmail,
-  sendEmailViaAPI
+  sendEmailViaAPI,
+  sendEmailViaHTTP
 }; 

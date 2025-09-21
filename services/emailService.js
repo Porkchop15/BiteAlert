@@ -12,13 +12,27 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
   throw new Error('Email configuration is incomplete');
 }
 
-// Create a transporter using Gmail
+// Create a transporter using Gmail with enhanced configuration
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
-  }
+  },
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 60000,     // 60 seconds
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 3,
+  rateDelta: 20000,
+  rateLimit: 5
 });
 
 // Verify transporter configuration
@@ -35,13 +49,17 @@ const generateVerificationToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-// Send verification email
-const sendVerificationEmail = async (email, token, type = 'verification') => {
+// Send verification email with retry logic
+const sendVerificationEmail = async (email, token, type = 'verification', retryCount = 0) => {
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 seconds
+  
   try {
     console.log('=== SENDING EMAIL ===');
     console.log('To:', email);
     console.log('Type:', type);
     console.log('Token:', token);
+    console.log('Attempt:', retryCount + 1);
 
     let mailOptions;
     
@@ -144,6 +162,14 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     console.error('=== EMAIL SENDING ERROR ===');
     console.error('Error details:', error);
     console.error('Stack trace:', error.stack);
+    
+    // Retry logic for connection timeouts
+    if (retryCount < maxRetries && (error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET' || error.code === 'ENOTFOUND')) {
+      console.log(`Retrying email send in ${retryDelay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      return sendVerificationEmail(email, token, type, retryCount + 1);
+    }
+    
     throw new Error('Failed to send email: ' + error.message);
   }
 };

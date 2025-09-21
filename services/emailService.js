@@ -6,42 +6,22 @@ console.log('=== EMAIL SERVICE CONFIGURATION ===');
 console.log('EMAIL_USER:', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'Loaded' : 'Missing');
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('Platform:', process.platform);
 
-// Use default email configuration if environment variables are not set
-const emailUser = process.env.EMAIL_USER || 'bitealert.app@gmail.com';
-const emailPassword = process.env.EMAIL_PASSWORD || 'your-app-password-here';
-
-if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
-  console.warn('⚠️ Email configuration is incomplete. Using fallback configuration.');
-  console.warn('⚠️ Please set EMAIL_USER and EMAIL_PASSWORD environment variables for production use.');
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+  console.error('Missing email configuration. Please check your .env file.');
+  throw new Error('Email configuration is incomplete');
 }
 
-// Create a transporter using Gmail with better configuration for cloud hosting
-let transporter;
-
-try {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: emailUser,
-      pass: emailPassword
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
-} catch (transporterError) {
-  console.error('Failed to create email transporter:', transporterError);
-  transporter = null;
-}
+// Create a transporter using Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
 
 // Verify transporter configuration
-if (transporter) {
 transporter.verify(function(error, success) {
   if (error) {
     console.error('Email transporter verification failed:', error);
@@ -49,9 +29,6 @@ transporter.verify(function(error, success) {
     console.log('Email transporter is ready to send messages');
   }
 });
-} else {
-  console.warn('⚠️ Email transporter not available - email service disabled');
-}
 
 // Generate verification token
 const generateVerificationToken = () => {
@@ -66,23 +43,6 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
     console.log('Type:', type);
     console.log('Token:', token);
 
-    // Check if email configuration is available
-    if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
-      console.warn('⚠️ Email service not configured. Skipping email send.');
-      console.warn('⚠️ User registration will continue without email verification.');
-      return true; // Return success to not block registration
-    }
-
-    // Check if transporter is available
-    if (!transporter) {
-      console.warn('⚠️ Email transporter not available. Skipping email send.');
-      console.warn('⚠️ User registration will continue without email verification.');
-      return true; // Return success to not block registration
-    }
-
-    // Use Nodemailer for email sending
-    console.log('📧 Attempting to send email via Nodemailer...');
-
     let mailOptions;
     
     if (type === 'verification') {
@@ -90,7 +50,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       mailOptions = {
         from: {
           name: 'Bite Alert',
-          address: emailUser
+          address: process.env.EMAIL_USER
         },
         to: email,
         subject: 'Bite Alert - Email Verification',
@@ -134,7 +94,7 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       mailOptions = {
         from: {
           name: 'Bite Alert',
-          address: emailUser
+          address: process.env.EMAIL_USER
         },
         to: email,
         subject: 'Password Reset Request',
@@ -176,136 +136,19 @@ const sendVerificationEmail = async (email, token, type = 'verification') => {
       throw new Error('Invalid email type');
     }
 
-    console.log('Sending email via Nodemailer...');
-    console.log('Email details:', {
-      to: mailOptions.to,
-      subject: mailOptions.subject,
-      from: mailOptions.from
-    });
-    
-    // Add timeout wrapper for email sending
-    const emailPromise = transporter.sendMail(mailOptions);
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Email sending timeout')), 30000); // 30 second timeout
-    });
-    
-    try {
-      const info = await Promise.race([emailPromise, timeoutPromise]);
-      console.log('✅ Email sent successfully via Nodemailer:', info.messageId);
-      console.log('📧 Email response:', info.response);
-      return true;
-    } catch (sendError) {
-      console.log('⚠️ Nodemailer email sending failed:', sendError.message);
-      console.log('⚠️ This is expected on cloud hosting platforms like Render');
-      console.log('⚠️ Will return false to trigger fallback service');
-      return false; // Return false instead of throwing
-    }
+    console.log('Sending email...');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
+    return true;
   } catch (error) {
-    console.log('⚠️ Email service error:', error.message);
-    console.log('⚠️ This is expected on cloud hosting platforms like Render');
-    console.log('⚠️ Will return false to trigger fallback service');
-    
-    // Don't throw error if email service is not configured
-    if (!emailUser || !emailPassword || emailPassword === 'your-app-password-here') {
-      console.log('⚠️ Email service not configured. Registration will continue without email verification.');
-      return true;
-    }
-    
-    return false;
-  }
-};
-
-// Gmail fallback email service
-const sendEmailViaAPI = async (email, token, type = 'verification') => {
-  try {
-    console.log('=== ATTEMPTING GMAIL FALLBACK SERVICE ===');
-    console.log('To:', email);
-    console.log('Type:', type);
-    console.log('Token:', token);
-    
-    // Import the Gmail service
-    const { sendGmailVerification, sendEmailViaExternalService } = require('./gmailService');
-    
-    // Try Gmail service first
-    console.log('📧 Trying Gmail service...');
-    let emailSent = await sendGmailVerification(email, token, type);
-    
-    if (emailSent) {
-      console.log('✅ Gmail service succeeded');
-      return true;
-    }
-    
-    // If Gmail fails, try external service
-    console.log('📧 Gmail service failed, trying external service...');
-    emailSent = await sendEmailViaExternalService(email, token, type);
-    
-    if (emailSent) {
-      console.log('✅ External service succeeded');
-      return true;
-    }
-    
-    // If both fail, log the verification details as fallback
-    console.log('📧 Both services failed, logging verification details...');
-    const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${token}`;
-    
-    console.log('📧 FALLBACK EMAIL SERVICE:');
-    if (type === 'verification') {
-      console.log('📧 Verification email details:');
-      console.log('🔗 Verification URL:', verificationUrl);
-      console.log('📧 Email:', email);
-      console.log('🔑 Token:', token);
-      console.log('💡 User can click the link to verify their account');
-    } else if (type === 'password-reset') {
-      console.log('📧 Password reset email details:');
-      console.log('🔑 OTP Code:', token);
-      console.log('📧 Email:', email);
-      console.log('💡 User can use the OTP to reset their password');
-    }
-    
-    return true; // Return success to not block registration
-    
-  } catch (error) {
-    console.error('❌ Gmail fallback service failed:', error);
-    return false;
-  }
-};
-
-// Simple HTTP email service (placeholder)
-const sendEmailViaHTTP = async (email, token, type = 'verification') => {
-  try {
-    console.log('=== SIMPLE EMAIL SERVICE ===');
-    console.log('To:', email);
-    console.log('Type:', type);
-    console.log('Token:', token);
-    
-    // Simple fallback - just log the verification details
-    const verificationUrl = `https://bitealert-yzau.onrender.com/verify-email/${token}`;
-    
-    console.log('📧 SIMPLE EMAIL SERVICE:');
-    if (type === 'verification') {
-      console.log('📧 Verification email details:');
-      console.log('🔗 Verification URL:', verificationUrl);
-      console.log('📧 Email:', email);
-      console.log('🔑 Token:', token);
-      console.log('💡 User can click the link to verify their account');
-    } else if (type === 'password-reset') {
-      console.log('📧 Password reset email details:');
-      console.log('🔑 OTP Code:', token);
-      console.log('📧 Email:', email);
-      console.log('💡 User can use the OTP to reset their password');
-    }
-    
-    return true; // Return success to not block registration
-    
-  } catch (error) {
-    console.error('❌ Simple email service failed:', error);
-    return false;
+    console.error('=== EMAIL SENDING ERROR ===');
+    console.error('Error details:', error);
+    console.error('Stack trace:', error.stack);
+    throw new Error('Failed to send email: ' + error.message);
   }
 };
 
 module.exports = {
   generateVerificationToken,
-  sendVerificationEmail,
-  sendEmailViaAPI,
-  sendEmailViaHTTP
+  sendVerificationEmail
 }; 

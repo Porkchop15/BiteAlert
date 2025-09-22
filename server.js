@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const compression = require('compression');
 const authRoutes = require('./routes/auth');
 const staffProfileRoutes = require('./routes/staff_profile');
 const patientProfileRoutes = require('./routes/patient_profile');
@@ -59,7 +60,8 @@ app.use(cors({
   maxAge: 86400 // 24 hours
 }));
 
-app.use(express.json());
+app.use(compression()); // Enable gzip compression
+app.use(express.json({ limit: '10mb' })); // Limit JSON payload size
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -69,16 +71,18 @@ app.get('/verify-email/:token', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'verify-email.html'));
 });
 
-// Debug middleware to log all requests
-app.use((req, res, next) => {
-  console.log('=== INCOMING REQUEST ===');
-  console.log('Method:', req.method);
-  console.log('URL:', req.url);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  console.log('=== END REQUEST ===');
-  next();
-});
+// Debug middleware to log all requests (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log('=== INCOMING REQUEST ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('=== END REQUEST ===');
+    next();
+  });
+}
 
 // MongoDB Connection with retry logic
 const connectWithRetry = async () => {

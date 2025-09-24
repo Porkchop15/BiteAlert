@@ -10,6 +10,7 @@ const biteCaseRoutes = require('./routes/bite_cases');
 const vaccinationDateRoutes = require('./routes/vaccination_dates');
 const barangayRoutes = require('./routes/barangay');
 const vaccineStocksRouter = require('./routes/vaccine_stocks');
+const centerHoursRoutes = require('./routes/center_hours');
 const path = require('path');
 
 // Load environment variables
@@ -118,6 +119,7 @@ app.use('/api/bite-cases', biteCaseRoutes);
 app.use('/api/vaccination-dates', vaccinationDateRoutes);
 app.use('/api/barangay', barangayRoutes);
 app.use('/api/vaccine-stocks', vaccineStocksRouter);
+app.use('/api', centerHoursRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -229,6 +229,15 @@ router.put('/:id', async (req, res) => {
       if (headerName) update['initiallyAssessedBy'] = headerName;
     }
 
+    // Track finalAssessedBy: prefer body when provided, else header; do not blank out
+    if (has('finalAssessedBy')) {
+      const val = (req.body.finalAssessedBy || '').toString().trim();
+      if (val) update['finalAssessedBy'] = val;
+    } else {
+      const headerName = (req.headers['x-staff-name'] || '').toString().trim();
+      if (headerName) update['finalAssessedBy'] = headerName;
+    }
+
     console.log('Applying $set update keys:', Object.keys(update));
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(

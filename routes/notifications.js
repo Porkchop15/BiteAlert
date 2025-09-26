@@ -118,13 +118,19 @@ async function sendTreatmentReminders() {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Find vaccination dates where any dose is scheduled for today and not completed
+    // Also exclude if overall treatment is completed
     const todayTreatments = await VaccinationDate.find({
-      $or: [
-        { d0Date: { $gte: today, $lt: tomorrow }, d0Status: { $ne: 'completed' } },
-        { d3Date: { $gte: today, $lt: tomorrow }, d3Status: { $ne: 'completed' } },
-        { d7Date: { $gte: today, $lt: tomorrow }, d7Status: { $ne: 'completed' } },
-        { d14Date: { $gte: today, $lt: tomorrow }, d14Status: { $ne: 'completed' } },
-        { d28Date: { $gte: today, $lt: tomorrow }, d28Status: { $ne: 'completed' } }
+      $and: [
+        {
+          $or: [
+            { d0Date: { $gte: today, $lt: tomorrow }, d0Status: { $ne: 'completed' } },
+            { d3Date: { $gte: today, $lt: tomorrow }, d3Status: { $ne: 'completed' } },
+            { d7Date: { $gte: today, $lt: tomorrow }, d7Status: { $ne: 'completed' } },
+            { d14Date: { $gte: today, $lt: tomorrow }, d14Status: { $ne: 'completed' } },
+            { d28Date: { $gte: today, $lt: tomorrow }, d28Status: { $ne: 'completed' } }
+          ]
+        },
+        { treatmentStatus: { $ne: 'completed' } }
       ]
     });
 

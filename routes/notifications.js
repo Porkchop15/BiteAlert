@@ -185,8 +185,32 @@ async function sendTreatmentReminders() {
           continue;
         }
 
+        // Fetch patient name from database
+        let patientName = 'Patient';
+        try {
+          const patient = await Patient.findOne({ patientId: treatment.patientId });
+          if (patient) {
+            patientName = `${patient.firstName} ${patient.lastName}`.trim();
+          }
+        } catch (error) {
+          console.log(`Could not fetch patient name for ${treatment.patientId}:`, error.message);
+        }
+
+        // Check if there are multiple users on this device
+        const deviceId = userTokenData.deviceId;
+        const usersOnDevice = deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : [];
+        const isMultiUserDevice = usersOnDevice.length > 1;
+
         const title = 'Treatment Reminder';
-        const body = `Hello, you have a ${doseName} treatment scheduled today. Please visit the center for your vaccination.`;
+        let body;
+        
+        if (isMultiUserDevice) {
+          // Include patient name for multi-user devices
+          body = `📋 ${patientName} has a ${doseName} treatment scheduled today. Please visit the center for vaccination.`;
+        } else {
+          // Standard message for single-user devices
+          body = `Hello ${patientName}, you have a ${doseName} treatment scheduled today. Please visit the center for your vaccination.`;
+        }
 
         const message = {
           token: userTokenData.token,
@@ -198,8 +222,11 @@ async function sendTreatmentReminders() {
             type: 'treatment_reminder',
             treatmentId: treatment._id.toString(),
             patientId: treatment.patientId,
+            patientName: patientName,
             doseName: doseName,
             scheduledDate: todayDose.toISOString(),
+            isMultiUserDevice: isMultiUserDevice.toString(),
+            usersOnDevice: usersOnDevice.join(',')
           },
         };
 
@@ -209,10 +236,12 @@ async function sendTreatmentReminders() {
         notificationsSent++;
         results.push({
           patientId: treatment.patientId,
-          patientName: `Patient ${treatment.patientId}`,
+          patientName: patientName,
           treatmentId: treatment._id,
           doseName: doseName,
           messageId: response,
+          isMultiUserDevice: isMultiUserDevice,
+          usersOnDevice: usersOnDevice,
           success: true
         });
 

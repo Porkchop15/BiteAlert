@@ -56,23 +56,18 @@ class CronService {
     try {
       console.log('=== SENDING TREATMENT REMINDERS ===');
       
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-      const response = await axios.post(`${baseUrl}/api/notifications/send-treatment-reminders`, {}, {
-        timeout: 30000 // 30 second timeout
-      });
-
-      console.log('✅ Treatment reminders sent successfully');
-      console.log('Response:', response.data);
+      // Import the notification function directly instead of making HTTP request
+      const { sendTreatmentReminders } = require('../routes/notifications');
       
-      return response.data;
+      // Call the function directly
+      const result = await sendTreatmentReminders();
+      
+      console.log('✅ Treatment reminders sent successfully');
+      console.log('Result:', result);
+      
+      return result;
     } catch (error) {
       console.error('❌ Error sending treatment reminders:', error.message);
-      
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-      }
-      
       throw error;
     }
   }

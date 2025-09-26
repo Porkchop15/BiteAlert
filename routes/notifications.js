@@ -25,8 +25,9 @@ try {
   console.warn('⚠️ Push notifications will not work without proper Firebase configuration');
 }
 
-// Store FCM tokens for users
-const userTokens = new Map(); // In production, use Redis or database
+// Store FCM tokens for users - support multiple patients per device
+const userTokens = new Map(); // userId -> { token, platform, registeredAt, deviceId }
+const deviceTokens = new Map(); // deviceId -> Set of userIds
 
 // Register FCM token for a user
 router.post('/register-token', async (req, res) => {
@@ -39,20 +40,33 @@ router.post('/register-token', async (req, res) => {
       });
     }
 
+    // Generate a device ID based on the FCM token (same token = same device)
+    const deviceId = fcmToken.substring(0, 20); // Use first 20 chars as device identifier
+    
     // Store token in memory (in production, use database)
     userTokens.set(userId, {
       token: fcmToken,
       userRole,
       platform,
+      deviceId,
       registeredAt: new Date()
     });
 
-    console.log(`✅ FCM token registered for user ${userId} (${userRole})`);
+    // Track which users are on this device
+    if (!deviceTokens.has(deviceId)) {
+      deviceTokens.set(deviceId, new Set());
+    }
+    deviceTokens.get(deviceId).add(userId);
+
+    console.log(`✅ FCM token registered for user ${userId} (${userRole}) on device ${deviceId}`);
+    console.log(`📱 Device ${deviceId} now has ${deviceTokens.get(deviceId).size} users`);
     
     res.json({ 
       message: 'FCM token registered successfully',
       userId,
-      userRole 
+      userRole,
+      deviceId,
+      usersOnDevice: Array.from(deviceTokens.get(deviceId))
     });
   } catch (error) {
     console.error('Error registering FCM token:', error);
@@ -254,14 +268,40 @@ router.get('/token-status/:userId', async (req, res) => {
       });
     }
 
+    // Get other users on the same device
+    const deviceId = userTokenData.deviceId;
+    const usersOnDevice = deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : [];
+
     res.json({
       userId,
       hasToken: true,
       platform: userTokenData.platform,
-      registeredAt: userTokenData.registeredAt
+      deviceId: userTokenData.deviceId,
+      registeredAt: userTokenData.registeredAt,
+      usersOnDevice: usersOnDevice
     });
   } catch (error) {
     console.error('Error getting token status:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Get all users on a device
+router.get('/device-users/:deviceId', async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const usersOnDevice = deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : [];
+    
+    res.json({
+      deviceId,
+      usersOnDevice,
+      totalUsers: usersOnDevice.length
+    });
+  } catch (error) {
+    console.error('Error getting device users:', error);
     res.status(500).json({ 
       message: 'Server error',
       error: error.message 
@@ -273,19 +313,37 @@ router.get('/token-status/:userId', async (req, res) => {
 router.delete('/remove-token/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const deleted = userTokens.delete(userId);
+    const userTokenData = userTokens.get(userId);
     
-    if (!deleted) {
+    if (!userTokenData) {
       return res.status(404).json({ 
         message: 'User token not found' 
       });
     }
 
+    // Remove user from device tracking
+    const deviceId = userTokenData.deviceId;
+    if (deviceTokens.has(deviceId)) {
+      deviceTokens.get(deviceId).delete(userId);
+      
+      // If no more users on this device, remove device entry
+      if (deviceTokens.get(deviceId).size === 0) {
+        deviceTokens.delete(deviceId);
+        console.log(`📱 Device ${deviceId} has no more users`);
+      } else {
+        console.log(`📱 Device ${deviceId} now has ${deviceTokens.get(deviceId).size} users`);
+      }
+    }
+
+    // Remove user token
+    userTokens.delete(userId);
+
     console.log(`✅ FCM token removed for user ${userId}`);
     
     res.json({ 
       message: 'FCM token removed successfully',
-      userId 
+      userId,
+      remainingUsersOnDevice: deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : []
     });
   } catch (error) {
     console.error('Error removing FCM token:', error);

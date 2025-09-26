@@ -11,6 +11,8 @@ const vaccinationDateRoutes = require('./routes/vaccination_dates');
 const barangayRoutes = require('./routes/barangay');
 const vaccineStocksRouter = require('./routes/vaccine_stocks');
 const centerHoursRoutes = require('./routes/center_hours');
+const notificationRoutes = require('./routes/notifications');
+const cronService = require('./services/cronService');
 const path = require('path');
 
 // Load environment variables
@@ -120,6 +122,7 @@ app.use('/api/vaccination-dates', vaccinationDateRoutes);
 app.use('/api/barangay', barangayRoutes);
 app.use('/api/vaccine-stocks', vaccineStocksRouter);
 app.use('/api', centerHoursRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -160,6 +163,45 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Manual trigger for treatment reminders (for testing)
+app.post('/api/trigger-reminders', async (req, res) => {
+  try {
+    console.log('=== MANUAL TRIGGER: TREATMENT REMINDERS ===');
+    const result = await cronService.triggerTreatmentReminders();
+    res.json({
+      message: 'Treatment reminders triggered successfully',
+      result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error triggering treatment reminders:', error);
+    res.status(500).json({
+      message: 'Failed to trigger treatment reminders',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get cron service status
+app.get('/api/cron-status', (req, res) => {
+  try {
+    const status = cronService.getStatus();
+    res.json({
+      message: 'Cron service status',
+      status,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting cron status:', error);
+    res.status(500).json({
+      message: 'Failed to get cron status',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('=== ERROR OCCURRED ===');
@@ -191,4 +233,12 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('- GET /api/test');
   console.log('- GET /api/health');
   console.log('- GET /api/debug/db');
+  
+  // Start cron service for treatment reminders
+  try {
+    cronService.start();
+    console.log('✅ Cron service started for treatment reminders');
+  } catch (error) {
+    console.error('❌ Failed to start cron service:', error);
+  }
 });

@@ -106,8 +106,8 @@ router.post('/send-to-user', async (req, res) => {
   }
 });
 
-// Send treatment reminder notifications
-router.post('/send-treatment-reminders', async (req, res) => {
+// Function to send treatment reminder notifications
+async function sendTreatmentReminders() {
   try {
     console.log('=== SENDING TREATMENT REMINDERS ===');
     
@@ -185,13 +185,24 @@ router.post('/send-treatment-reminders', async (req, res) => {
 
     console.log(`✅ Treatment reminders completed: ${notificationsSent}/${todayTreatments.length} sent`);
     
-    res.json({
+    return {
       message: 'Treatment reminders processed',
       totalTreatments: todayTreatments.length,
       notificationsSent,
       results
-    });
+    };
 
+  } catch (error) {
+    console.error('Error sending treatment reminders:', error);
+    throw error;
+  }
+}
+
+// Send treatment reminder notifications
+router.post('/send-treatment-reminders', async (req, res) => {
+  try {
+    const result = await sendTreatmentReminders();
+    res.json(result);
   } catch (error) {
     console.error('Error sending treatment reminders:', error);
     res.status(500).json({ 
@@ -302,4 +313,5 @@ router.post('/test-notification', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.sendTreatmentReminders = sendTreatmentReminders;
 

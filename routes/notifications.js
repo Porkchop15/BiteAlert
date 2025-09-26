@@ -117,13 +117,16 @@ async function sendTreatmentReminders() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    // Find vaccination dates where any dose is scheduled for today and not completed
     const todayTreatments = await VaccinationDate.find({
-      scheduledDate: {
-        $gte: today,
-        $lt: tomorrow
-      },
-      status: { $ne: 'completed' }
-    }).populate('patientId', 'patientId firstName lastName email');
+      $or: [
+        { d0Date: { $gte: today, $lt: tomorrow }, d0Status: { $ne: 'completed' } },
+        { d3Date: { $gte: today, $lt: tomorrow }, d3Status: { $ne: 'completed' } },
+        { d7Date: { $gte: today, $lt: tomorrow }, d7Status: { $ne: 'completed' } },
+        { d14Date: { $gte: today, $lt: tomorrow }, d14Status: { $ne: 'completed' } },
+        { d28Date: { $gte: today, $lt: tomorrow }, d28Status: { $ne: 'completed' } }
+      ]
+    });
 
     console.log(`Found ${todayTreatments.length} treatments for today`);
 
@@ -132,17 +135,38 @@ async function sendTreatmentReminders() {
 
     for (const treatment of todayTreatments) {
       try {
-        const patient = treatment.patientId;
-        if (!patient) continue;
+        // Find which dose is scheduled for today
+        let todayDose = null;
+        let doseName = '';
+        
+        if (treatment.d0Date && treatment.d0Date >= today && treatment.d0Date < tomorrow && treatment.d0Status !== 'completed') {
+          todayDose = treatment.d0Date;
+          doseName = 'D0';
+        } else if (treatment.d3Date && treatment.d3Date >= today && treatment.d3Date < tomorrow && treatment.d3Status !== 'completed') {
+          todayDose = treatment.d3Date;
+          doseName = 'D3';
+        } else if (treatment.d7Date && treatment.d7Date >= today && treatment.d7Date < tomorrow && treatment.d7Status !== 'completed') {
+          todayDose = treatment.d7Date;
+          doseName = 'D7';
+        } else if (treatment.d14Date && treatment.d14Date >= today && treatment.d14Date < tomorrow && treatment.d14Status !== 'completed') {
+          todayDose = treatment.d14Date;
+          doseName = 'D14';
+        } else if (treatment.d28Date && treatment.d28Date >= today && treatment.d28Date < tomorrow && treatment.d28Status !== 'completed') {
+          todayDose = treatment.d28Date;
+          doseName = 'D28';
+        }
 
-        const userTokenData = userTokens.get(patient.patientId);
+        if (!todayDose) continue;
+
+        // Get patient info from the patientId field (it's a string, not populated)
+        const userTokenData = userTokens.get(treatment.patientId);
         if (!userTokenData) {
-          console.log(`No FCM token found for patient ${patient.patientId}`);
+          console.log(`No FCM token found for patient ${treatment.patientId}`);
           continue;
         }
 
         const title = 'Treatment Reminder';
-        const body = `Hello ${patient.firstName}, you have a ${treatment.vaccineName} treatment scheduled today at ${treatment.scheduledTime || 'your scheduled time'}.`;
+        const body = `Hello, you have a ${doseName} treatment scheduled today. Please visit the center for your vaccination.`;
 
         const message = {
           token: userTokenData.token,
@@ -153,21 +177,21 @@ async function sendTreatmentReminders() {
           data: {
             type: 'treatment_reminder',
             treatmentId: treatment._id.toString(),
-            patientId: patient.patientId,
-            vaccineName: treatment.vaccineName,
-            scheduledDate: treatment.scheduledDate.toISOString(),
+            patientId: treatment.patientId,
+            doseName: doseName,
+            scheduledDate: todayDose.toISOString(),
           },
         };
 
         const response = await admin.messaging().send(message);
-        console.log(`✅ Treatment reminder sent to ${patient.firstName} ${patient.lastName}: ${response}`);
+        console.log(`✅ Treatment reminder sent to patient ${treatment.patientId}: ${response}`);
         
         notificationsSent++;
         results.push({
-          patientId: patient.patientId,
-          patientName: `${patient.firstName} ${patient.lastName}`,
+          patientId: treatment.patientId,
+          patientName: `Patient ${treatment.patientId}`,
           treatmentId: treatment._id,
-          vaccineName: treatment.vaccineName,
+          doseName: doseName,
           messageId: response,
           success: true
         });

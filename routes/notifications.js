@@ -4,6 +4,7 @@ const admin = require('firebase-admin');
 const Patient = require('../models/Patient');
 const VaccinationDate = require('../models/VaccinationDate');
 const BiteCase = require('../models/BiteCase');
+const FCMToken = require('../models/FCMToken');
 
 // Initialize Firebase Admin SDK (you'll need to add your service account key)
 let serviceAccount;
@@ -25,9 +26,8 @@ try {
   console.warn('⚠️ Push notifications will not work without proper Firebase configuration');
 }
 
-// Store FCM tokens for users - support multiple patients per device
-const userTokens = new Map(); // userId -> { token, platform, registeredAt, deviceId }
-const deviceTokens = new Map(); // deviceId -> Set of userIds
+// FCM tokens are now stored in MongoDB database
+// No need for in-memory storage - tokens persist across restarts
 
 // Register FCM token for a user
 router.post('/register-token', async (req, res) => {
@@ -43,30 +43,40 @@ router.post('/register-token', async (req, res) => {
     // Generate a device ID based on the FCM token (same token = same device)
     const deviceId = fcmToken.substring(0, 20); // Use first 20 chars as device identifier
     
-    // Store token in memory (in production, use database)
-    userTokens.set(userId, {
-      token: fcmToken,
-      userRole,
-      platform,
+    // Store token in database (persists across restarts)
+    const tokenData = {
+      userId,
+      fcmToken,
+      platform: platform || 'flutter',
       deviceId,
-      registeredAt: new Date()
-    });
+      userRole,
+      isActive: true,
+      registeredAt: new Date(),
+      lastUsedAt: new Date()
+    };
 
-    // Track which users are on this device
-    if (!deviceTokens.has(deviceId)) {
-      deviceTokens.set(deviceId, new Set());
-    }
-    deviceTokens.get(deviceId).add(userId);
+    // Upsert token (update if exists, insert if new)
+    await FCMToken.findOneAndUpdate(
+      { fcmToken: fcmToken },
+      tokenData,
+      { upsert: true, new: true }
+    );
+
+    // Get count of users on this device
+    const usersOnDevice = await FCMToken.find({ 
+      deviceId: deviceId, 
+      isActive: true 
+    }).distinct('userId');
 
     console.log(`✅ FCM token registered for user ${userId} (${userRole}) on device ${deviceId}`);
-    console.log(`📱 Device ${deviceId} now has ${deviceTokens.get(deviceId).size} users`);
+    console.log(`📱 Device ${deviceId} now has ${usersOnDevice.length} users`);
     
     res.json({ 
       message: 'FCM token registered successfully',
       userId,
       userRole,
       deviceId,
-      usersOnDevice: Array.from(deviceTokens.get(deviceId))
+      usersOnDevice: usersOnDevice
     });
   } catch (error) {
     console.error('Error registering FCM token:', error);
@@ -88,15 +98,20 @@ router.post('/send-to-user', async (req, res) => {
       });
     }
 
-    const userTokenData = userTokens.get(userId);
-    if (!userTokenData) {
+    // Find user's token in database
+    const userToken = await FCMToken.findOne({ 
+      userId: userId, 
+      isActive: true 
+    });
+    
+    if (!userToken) {
       return res.status(404).json({ 
         message: 'User token not found' 
       });
     }
 
     const message = {
-      token: userTokenData.token,
+      token: userToken.fcmToken,
       notification: {
         title,
         body,
@@ -178,9 +193,13 @@ async function sendTreatmentReminders() {
 
         if (!todayDose) continue;
 
-        // Get patient info from the patientId field (it's a string, not populated)
-        const userTokenData = userTokens.get(treatment.patientId);
-        if (!userTokenData) {
+        // Get patient's FCM token from database
+        const userToken = await FCMToken.findOne({ 
+          userId: treatment.patientId, 
+          isActive: true 
+        });
+        
+        if (!userToken) {
           console.log(`No FCM token found for patient ${treatment.patientId}`);
           continue;
         }
@@ -196,9 +215,12 @@ async function sendTreatmentReminders() {
           console.log(`Could not fetch patient name for ${treatment.patientId}:`, error.message);
         }
 
-        // Check if there are multiple users on this device
-        const deviceId = userTokenData.deviceId;
-        const usersOnDevice = deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : [];
+        // Check if this device has multiple users
+        const deviceId = userToken.deviceId;
+        const usersOnDevice = await FCMToken.find({ 
+          deviceId: deviceId, 
+          isActive: true 
+        }).distinct('userId');
         const isMultiUserDevice = usersOnDevice.length > 1;
 
         const title = 'Treatment Reminder';
@@ -213,7 +235,7 @@ async function sendTreatmentReminders() {
         }
 
         const message = {
-          token: userTokenData.token,
+          token: userToken.fcmToken,
           notification: {
             title,
             body,
@@ -289,24 +311,32 @@ router.post('/send-treatment-reminders', async (req, res) => {
 router.get('/token-status/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const userTokenData = userTokens.get(userId);
     
-    if (!userTokenData) {
+    // Find user's token in database
+    const userToken = await FCMToken.findOne({ 
+      userId: userId, 
+      isActive: true 
+    });
+    
+    if (!userToken) {
       return res.status(404).json({ 
         message: 'User token not found' 
       });
     }
 
-    // Get other users on the same device
-    const deviceId = userTokenData.deviceId;
-    const usersOnDevice = deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : [];
+    // Get all users on this device
+    const usersOnDevice = await FCMToken.find({ 
+      deviceId: userToken.deviceId, 
+      isActive: true 
+    }).distinct('userId');
 
     res.json({
       userId,
       hasToken: true,
-      platform: userTokenData.platform,
-      deviceId: userTokenData.deviceId,
-      registeredAt: userTokenData.registeredAt,
+      platform: userToken.platform,
+      deviceId: userToken.deviceId,
+      registeredAt: userToken.registeredAt,
+      lastUsedAt: userToken.lastUsedAt,
       usersOnDevice: usersOnDevice
     });
   } catch (error) {
@@ -322,7 +352,12 @@ router.get('/token-status/:userId', async (req, res) => {
 router.get('/device-users/:deviceId', async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const usersOnDevice = deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : [];
+    
+    // Get all active users on this device from database
+    const usersOnDevice = await FCMToken.find({ 
+      deviceId: deviceId, 
+      isActive: true 
+    }).distinct('userId');
     
     res.json({
       deviceId,
@@ -342,37 +377,35 @@ router.get('/device-users/:deviceId', async (req, res) => {
 router.delete('/remove-token/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const userTokenData = userTokens.get(userId);
     
-    if (!userTokenData) {
+    // Find user's token in database
+    const userToken = await FCMToken.findOne({ userId: userId, isActive: true });
+    
+    if (!userToken) {
       return res.status(404).json({ 
         message: 'User token not found' 
       });
     }
 
-    // Remove user from device tracking
-    const deviceId = userTokenData.deviceId;
-    if (deviceTokens.has(deviceId)) {
-      deviceTokens.get(deviceId).delete(userId);
-      
-      // If no more users on this device, remove device entry
-      if (deviceTokens.get(deviceId).size === 0) {
-        deviceTokens.delete(deviceId);
-        console.log(`📱 Device ${deviceId} has no more users`);
-      } else {
-        console.log(`📱 Device ${deviceId} now has ${deviceTokens.get(deviceId).size} users`);
-      }
-    }
+    // Mark token as inactive instead of deleting (for audit trail)
+    await FCMToken.findByIdAndUpdate(userToken._id, { 
+      isActive: false,
+      lastUsedAt: new Date()
+    });
 
-    // Remove user token
-    userTokens.delete(userId);
+    // Get remaining users on this device
+    const remainingUsersOnDevice = await FCMToken.find({ 
+      deviceId: userToken.deviceId, 
+      isActive: true 
+    }).distinct('userId');
 
     console.log(`✅ FCM token removed for user ${userId}`);
+    console.log(`📱 Device ${userToken.deviceId} now has ${remainingUsersOnDevice.length} users`);
     
     res.json({ 
       message: 'FCM token removed successfully',
       userId,
-      remainingUsersOnDevice: deviceTokens.has(deviceId) ? Array.from(deviceTokens.get(deviceId)) : []
+      remainingUsersOnDevice: remainingUsersOnDevice
     });
   } catch (error) {
     console.error('Error removing FCM token:', error);
@@ -394,15 +427,20 @@ router.post('/test-notification', async (req, res) => {
       });
     }
 
-    const userTokenData = userTokens.get(userId);
-    if (!userTokenData) {
+    // Find user's token in database
+    const userToken = await FCMToken.findOne({ 
+      userId: userId, 
+      isActive: true 
+    });
+    
+    if (!userToken) {
       return res.status(404).json({ 
         message: 'User token not found' 
       });
     }
 
     const message = {
-      token: userTokenData.token,
+      token: userToken.fcmToken,
       notification: {
         title: title || 'Test Notification',
         body: body || 'This is a test notification from BiteAlert',

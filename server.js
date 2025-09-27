@@ -183,6 +183,44 @@ app.post('/api/trigger-reminders', async (req, res) => {
   }
 });
 
+// Test endpoint to create CronExecution record manually
+app.post('/api/test-cron-execution', async (req, res) => {
+  try {
+    console.log('=== TESTING CRON EXECUTION RECORD ===');
+    const CronExecution = require('./models/CronExecution');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const executionRecord = new CronExecution({
+      jobName: 'test_execution',
+      executionDate: today,
+      status: 'success',
+      executedAt: new Date(),
+      results: {
+        totalTreatments: 1,
+        notificationsSent: 1,
+        errors: []
+      }
+    });
+    
+    console.log('📝 Creating test cron execution record:', executionRecord);
+    await executionRecord.save();
+    console.log('✅ Test cron execution record saved with ID:', executionRecord._id);
+    
+    res.json({
+      message: 'Test cron execution record created successfully',
+      record: executionRecord
+    });
+  } catch (error) {
+    console.error('❌ Error creating test cron execution:', error);
+    res.status(500).json({
+      message: 'Error creating test cron execution',
+      error: error.message
+    });
+  }
+});
+
 // Get cron service status
 app.get('/api/cron-status', (req, res) => {
   try {

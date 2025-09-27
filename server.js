@@ -221,6 +221,34 @@ app.post('/api/test-cron-execution', async (req, res) => {
   }
 });
 
+// Check if cron_executions collection exists and has data
+app.get('/api/check-cron-executions', async (req, res) => {
+  try {
+    console.log('=== CHECKING CRON EXECUTIONS COLLECTION ===');
+    const CronExecution = require('./models/CronExecution');
+    
+    // Count all records
+    const count = await CronExecution.countDocuments();
+    console.log('📊 Total cron executions:', count);
+    
+    // Get all records
+    const records = await CronExecution.find({}).sort({ executedAt: -1 }).limit(10);
+    console.log('📋 Recent cron executions:', records.length);
+    
+    res.json({
+      message: 'Cron executions collection check',
+      totalRecords: count,
+      recentRecords: records
+    });
+  } catch (error) {
+    console.error('❌ Error checking cron executions:', error);
+    res.status(500).json({
+      message: 'Error checking cron executions',
+      error: error.message
+    });
+  }
+});
+
 // Get cron service status
 app.get('/api/cron-status', (req, res) => {
   try {

@@ -32,6 +32,7 @@ router.get('/:id', async (req, res) => {
       lastName: staff.lastName,
       email: staff.email,
       phone: staff.phone,
+      additionalContactNumber: staff.additionalContactNumber || '',
       birthdate: staff.birthdate,
       role: staff.role,
       position: staff.position || '',
@@ -68,7 +69,7 @@ router.put('/:id', async (req, res) => {
 
     // Update only the fields that are provided in the request
     const updateFields = [
-      'firstName', 'middleName', 'lastName', 'phone',
+      'firstName', 'middleName', 'lastName', 'phone', 'additionalContactNumber',
       'position', 'department', 'officeAddress'
     ];
 
@@ -92,6 +93,7 @@ router.put('/:id', async (req, res) => {
       lastName: staff.lastName,
       email: staff.email,
       phone: staff.phone,
+      additionalContactNumber: staff.additionalContactNumber || '',
       birthdate: staff.birthdate,
       role: staff.role,
       position: staff.position || '',

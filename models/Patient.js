@@ -40,6 +40,11 @@ const patientSchema = new mongoose.Schema({
     required: [true, 'Phone number is required'],
     trim: true
   },
+  additionalContactNumber: {
+    type: String,
+    default: '',
+    trim: true
+  },
   birthdate: {
     type: Date,
     required: [true, 'Birthdate is required']
@@ -137,6 +142,14 @@ const patientSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  status: {
+    type: String,
+    default: 'active',
+    enum: {
+      values: ['active', 'inactive', 'suspended'],
+      message: 'Status must be active, inactive, or suspended'
+    }
   },
   verificationToken: {
     type: String

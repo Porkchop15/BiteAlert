@@ -55,6 +55,7 @@ router.get('/:id', async (req, res) => {
       lastName: patient.lastName,
       email: patient.email,
       phone: patient.phone,
+      additionalContactNumber: patient.additionalContactNumber || '',
       birthdate: patient.birthdate,
       role: patient.role,
       houseNo: patient.houseNo || '',
@@ -100,7 +101,7 @@ router.put('/:id', async (req, res) => {
 
     // Update only the fields that are provided in the request
     const updateFields = [
-      'firstName', 'middleName', 'lastName', 'phone',
+      'firstName', 'middleName', 'lastName', 'phone', 'additionalContactNumber',
       'houseNo', 'street', 'barangay', 'subdivision',
       'city', 'province', 'zipCode', 'birthPlace',
       'religion', 'occupation', 'nationality',
@@ -127,6 +128,7 @@ router.put('/:id', async (req, res) => {
       lastName: patient.lastName,
       email: patient.email,
       phone: patient.phone,
+      additionalContactNumber: patient.additionalContactNumber || '',
       birthdate: patient.birthdate,
       role: patient.role,
       houseNo: patient.houseNo || '',

@@ -117,6 +117,10 @@ router.post('/', async (req, res) => {
 
     // Audit: Added vaccine stock
     try {
+      const auditIntent = (req.headers['x-audit-intent'] || '').toString().toLowerCase();
+      if (auditIntent.includes('suppress') || auditIntent === 'vaccination') {
+        // Skip auditing when invoked as part of vaccination status updates
+      } else {
       const staff = await resolveStaff(req);
       await AuditTrail.create({
         role: 'Staff',
@@ -129,6 +133,7 @@ router.post('/', async (req, res) => {
         patientID: null,
         staffID: staff?.staffId || null,
       });
+      }
     } catch (e) {
       console.error('Failed to write audit for add vaccine stocks:', e);
     }
@@ -199,6 +204,10 @@ router.put('/:centerName', async (req, res) => {
 
     // Audit: Updated vaccine stock
     try {
+      const auditIntent = (req.headers['x-audit-intent'] || '').toString().toLowerCase();
+      if (auditIntent.includes('suppress') || auditIntent === 'vaccination') {
+        // Skip auditing when invoked as part of vaccination status updates
+      } else {
       const staff = await resolveStaff(req);
       await AuditTrail.create({
         role: 'Staff',
@@ -211,6 +220,7 @@ router.put('/:centerName', async (req, res) => {
         patientID: null,
         staffID: staff?.staffId || null,
       });
+      }
     } catch (e) {
       console.error('Failed to write audit for update vaccine stocks:', e);
     }
@@ -239,6 +249,10 @@ router.delete('/:centerName', async (req, res) => {
 
     // Audit: Deleted vaccine stock
     try {
+      const auditIntent = (req.headers['x-audit-intent'] || '').toString().toLowerCase();
+      if (auditIntent.includes('suppress') || auditIntent === 'vaccination') {
+        // Skip auditing when invoked as part of vaccination status updates
+      } else {
       const staff = await resolveStaff(req);
       await AuditTrail.create({
         role: 'Staff',
@@ -251,6 +265,7 @@ router.delete('/:centerName', async (req, res) => {
         patientID: null,
         staffID: staff?.staffId || null,
       });
+      }
     } catch (e) {
       console.error('Failed to write audit for delete vaccine stocks:', e);
     }

@@ -170,6 +170,41 @@ router.put('/:id', async (req, res) => {
         }
       }
 
+      // Write audit trail per dose date reschedule (when date fields change)
+      const dateKeys = [
+        { key: 'd0Date', label: 'Day 0' },
+        { key: 'd3Date', label: 'Day 3' },
+        { key: 'd7Date', label: 'Day 7' },
+        { key: 'd14Date', label: 'Day 14' },
+        { key: 'd28Date', label: 'Day 28/30' },
+      ];
+      for (const { key, label } of dateKeys) {
+        const beforeDate = prev[key] ? new Date(prev[key]).toISOString() : '';
+        const afterDate = curr[key] ? new Date(curr[key]).toISOString() : '';
+        if (beforeDate !== afterDate) {
+          // Dedupe: avoid duplicate reschedule logs within a short window
+          const recentSince = new Date(Date.now() - 3000);
+          const recent = await AuditTrail.findOne({
+            action: `Rescheduled ${label} vaccination for ${patientName}`,
+            staffID: staff?.staffId || null,
+            timestamp: { $gte: recentSince }
+          }).sort({ timestamp: -1 });
+          if (!recent) {
+            await AuditTrail.create({
+              role: 'Staff',
+              firstName: staff?.firstName || '',
+              middleName: staff?.middleName || '',
+              lastName: staff?.lastName || '',
+              centerName: staff?.officeAddress || '',
+              action: `Rescheduled ${label} vaccination for ${patientName}`,
+              patientName: patientName,
+              patientID: null,
+              staffID: staff?.staffId || null,
+            });
+          }
+        }
+      }
+
     } catch (auditErr) {
       console.error('Failed to write audit for vaccination status update:', auditErr);
     }

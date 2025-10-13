@@ -479,7 +479,8 @@ router.put('/:id', async (req, res) => {
           centerName: actor?.centerName || (update.center || existing.center || ''),
           action: `Updated bite case for ${patientFullName}`,
           patientName: patientFullName,
-          patientID: existing?.patientId || null,
+          // Ensure the ID column shows the staff ID for update actions
+          patientID: null,
           staffID: actor?.staffID || null,
           });
         }

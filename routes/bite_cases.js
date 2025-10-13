@@ -276,7 +276,8 @@ router.post('/', async (req, res) => {
         centerName: actor?.centerName || (processedBody.center || ''),
         action: `Created bite case for ${patientFullName}`,
         patientName: patientFullName,
-        patientID: processedBody.patientId || null,
+        // Ensure the ID column shows the staff ID for creation actions
+        patientID: null,
         staffID: actor?.staffID || null,
       });
     } catch (auditErr) {

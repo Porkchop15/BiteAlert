@@ -48,6 +48,21 @@ async function resolveActor(req) {
     }
 
     // Fallback via custom headers (best-effort)
+    const headerStaffId = (req.headers['x-staff-id'] || '').toString().trim();
+    if (headerStaffId) {
+      const staff = await Staff.findOne({ staffId: headerStaffId });
+      if (staff) {
+        return {
+          role: 'Staff',
+          firstName: staff.firstName,
+          middleName: staff.middleName || '',
+          lastName: staff.lastName,
+          staffID: staff.staffId,
+          patientID: null,
+          centerName: staff.officeAddress || '',
+        };
+      }
+    }
     const headerName = (req.headers['x-staff-name'] || '').toString();
     const headerCenter = (req.headers['x-staff-center'] || '').toString();
     if (headerName) {
@@ -57,7 +72,7 @@ async function resolveActor(req) {
         firstName: parts[0] || '',
         middleName: parts.length === 3 ? parts[1] : '',
         lastName: parts.length > 1 ? parts[parts.length - 1] : '',
-        staffID: null,
+        staffID: headerStaffId || null,
         patientID: null,
         centerName: headerCenter || '',
       };
@@ -439,14 +454,14 @@ router.put('/:id', async (req, res) => {
           }
         }
 
-        // De-duplicate: skip if an identical update audit was created very recently
+        // De-duplicate: skip if an identical update audit was created very recently (match dynamic action)
         let shouldWriteAudit = true;
         try {
           const recentSince = new Date(Date.now() - 3000); // 3 seconds
+          const patientFullName = [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim();
           const last = await AuditTrail.findOne({
-            action: 'Updated bite case',
+            action: `Updated bite case for ${patientFullName}`,
             staffID: actor?.staffID || null,
-            patientID: existing?.patientId || null,
             timestamp: { $gte: recentSince }
           }).sort({ timestamp: -1 });
           if (last) {

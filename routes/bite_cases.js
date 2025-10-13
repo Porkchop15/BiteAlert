@@ -240,6 +240,7 @@ router.post('/', async (req, res) => {
         lastName: actor?.lastName || '',
         centerName: actor?.centerName || (processedBody.center || ''),
         action: 'Created bite case',
+        patientName: [processedBody.firstName, processedBody.middleName, processedBody.lastName].filter(Boolean).join(' ').trim(),
         patientID: processedBody.patientId || null,
         staffID: actor?.staffID || null,
       });
@@ -347,6 +348,7 @@ router.put('/:id', async (req, res) => {
         lastName: actor?.lastName || '',
         centerName: actor?.centerName || (update.center || existing.center || ''),
         action: 'Updated bite case',
+        patientName: [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim(),
         patientID: existing?.patientId || null,
         staffID: actor?.staffID || null,
       });

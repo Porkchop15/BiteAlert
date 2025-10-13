@@ -332,9 +332,21 @@ router.put('/:id', async (req, res) => {
       'updatedAt',
     ]);
     const updateKeys = Object.keys(update).filter((k) => !nonMeaningfulFields.has(k));
+
+    // Only consider these fields meaningful for audit purposes
+    const meaningfulFieldPrefixes = [
+      'philhealthNo', 'remarks', 'animalStatus', 'status', 'lastArn', 'completed', 'tt', 'center',
+      'typeOfExposure', 'siteOfBite', 'natureOfInjury', 'externalCause', 'placeOfOccurrence', 'disposition', 'circumstanceOfBite',
+      'othersBiteSpecify', 'biteStingDetails', 'chemicalSubstanceDetails', 'placeOthersDetails', 'transferredTo',
+      'burnDegree', 'burnSite', 'othersInjuryDetails', 'scheduleDates',
+      // nested
+      'animalProfile', 'patientImmunization', 'currentImmunization', 'management'
+    ];
+    const isMeaningfulKey = (k) => meaningfulFieldPrefixes.some((p) => k === p || k.startsWith(p + '.') );
+    const meaningfulUpdateKeys = updateKeys.filter(isMeaningfulKey);
     let meaningfulChanged = false;
     try {
-      for (const key of updateKeys) {
+      for (const key of meaningfulUpdateKeys) {
         const existingVal = existing.get(key);
         const newVal = update[key];
         // Simple deep compare via JSON for nested structures
@@ -349,6 +361,16 @@ router.put('/:id', async (req, res) => {
       console.log('Compare update vs existing failed, assuming changed:', cmpErr?.message);
       meaningfulChanged = true;
     }
+
+    // Additional guard: skip audit if update occurs within 5 seconds of creation and no meaningful keys present
+    try {
+      const createdAtMs = (existing.createdAt ? new Date(existing.createdAt).getTime() : Date.now());
+      const nowMs = Date.now();
+      const withinCreateWindow = (nowMs - createdAtMs) < 5000; // 5 seconds
+      if (withinCreateWindow && meaningfulUpdateKeys.length === 0) {
+        meaningfulChanged = false;
+      }
+    } catch (_timeErr) {}
 
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,

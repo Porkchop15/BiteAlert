@@ -10,7 +10,7 @@ const auditTrailSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ['Staff', 'Patient', 'Admin', 'SuperAdmin'],
+      enum: ['Staff', 'Patient'],
     },
     firstName: {
       type: String,
@@ -27,19 +27,16 @@ const auditTrailSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    centerName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     action: {
       type: String,
       required: true,
       enum: ['Signed in', 'Signed out'],
       index: true,
-    },
-    adminID: {
-      type: String,
-      default: null,
-    },
-    superAdminID: {
-      type: String,
-      default: null,
     },
     patientID: {
       type: String,

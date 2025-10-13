@@ -124,6 +124,26 @@ router.put('/:id', async (req, res) => {
 
     console.log('Updated vaccination date:', updatedVaccinationDate);
 
+    // Keep bite_cases.scheduleDates in sync with vaccination dates
+    try {
+      const scheduleDates = [
+        updatedVaccinationDate.d0Date || '',
+        updatedVaccinationDate.d3Date || '',
+        updatedVaccinationDate.d7Date || '',
+        updatedVaccinationDate.d14Date || '',
+        updatedVaccinationDate.d28Date || '',
+      ].filter(Boolean);
+      if (scheduleDates.length > 0) {
+        await BiteCase.findOneAndUpdate(
+          { registrationNumber: updatedVaccinationDate.registrationNumber },
+          { $set: { scheduleDates } },
+          { new: false }
+        );
+      }
+    } catch (syncErr) {
+      console.error('Failed to sync scheduleDates to bite_cases:', syncErr);
+    }
+
     // Write audit trail per dose status change
     try {
       const staff = await resolveStaff(req);

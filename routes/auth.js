@@ -743,12 +743,15 @@ router.post('/test-email', async (req, res) => {
 
 module.exports = router; 
 
-// Logout route - expects Authorization: Bearer <token>
+// Logout route - expects Authorization: Bearer <token> or { token } in body
 router.post('/logout', async (req, res) => {
   try {
     const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const headerToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const bodyToken = req.body && typeof req.body.token === 'string' ? req.body.token : null;
+    const token = headerToken || bodyToken;
     if (!token) {
+      console.log('Logout called without token. Headers received:', req.headers);
       return res.status(400).json({ message: 'Missing token' });
     }
 
@@ -756,6 +759,7 @@ router.post('/logout', async (req, res) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (e) {
+      console.log('Logout token verification failed:', e && e.message);
       return res.status(401).json({ message: 'Invalid token' });
     }
 
@@ -779,6 +783,8 @@ router.post('/logout', async (req, res) => {
         } catch (auditErr) {
           console.error('Failed to write staff sign-out audit:', auditErr);
         }
+      } else {
+        console.log('Logout: staff not found for userId:', decoded.userId);
       }
     } else if (role === 'patient') {
       const patient = await Patient.findOne({ patientId: decoded.userId });
@@ -797,6 +803,8 @@ router.post('/logout', async (req, res) => {
         } catch (auditErr) {
           console.error('Failed to write patient sign-out audit:', auditErr);
         }
+      } else {
+        console.log('Logout: patient not found for userId:', decoded.userId);
       }
     }
 
@@ -804,6 +812,23 @@ router.post('/logout', async (req, res) => {
     return res.json({ message: 'Logged out' });
   } catch (error) {
     console.error('Logout error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET alias for quick testing: /api/auth/logout?token=...
+router.get('/logout', async (req, res) => {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token : null;
+    if (!token) {
+      return res.status(400).json({ message: 'Missing token' });
+    }
+
+    // Reuse POST handler logic by faking body
+    req.body = { token };
+    return router.handle(req, res);
+  } catch (err) {
+    console.error('GET /logout error:', err);
     return res.status(500).json({ message: 'Server error' });
   }
 });

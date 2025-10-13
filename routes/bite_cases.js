@@ -387,10 +387,13 @@ router.put('/:id', async (req, res) => {
       const nowMs = Date.now();
       const withinStrictWindow = (nowMs - createdAtMs) < 30000; // 30 seconds window after creation
       const withinCreateWindow = (nowMs - createdAtMs) < 5000; // 5 seconds (legacy guard)
-      // Skip any update audit within 30s of creation to avoid double logs on initial setup
-      if (withinStrictWindow) {
+      const forceAuditHeader = (req.headers['x-audit-intent'] || '').toString().toLowerCase();
+      const forceAudit = forceAuditHeader === 'update';
+      // Skip any update audit within 30s of creation to avoid double logs on initial setup,
+      // unless explicitly requested by client with X-Audit-Intent: update
+      if (!forceAudit && withinStrictWindow) {
         meaningfulChanged = false;
-      } else if (withinCreateWindow && meaningfulUpdateKeys.length === 0) {
+      } else if (!forceAudit && withinCreateWindow && meaningfulUpdateKeys.length === 0) {
         meaningfulChanged = false;
       }
     } catch (_timeErr) {}

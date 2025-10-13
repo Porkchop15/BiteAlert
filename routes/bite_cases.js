@@ -232,7 +232,26 @@ router.post('/', async (req, res) => {
     console.log('Backend create - Management object saved:', savedBiteCase.management);
     // Write audit trail: Created bite case
     try {
-      const actor = await resolveActor(req);
+      let actor = await resolveActor(req);
+      // Fallback: try to parse staff name from request body or headers if actor missing names
+      if (!actor || (!actor.firstName && !actor.lastName)) {
+        const nameFromBody = (req.body.finalAssessedBy || req.body.initiallyAssessedBy || '').toString().trim();
+        const nameFromHeader = (req.headers['x-staff-name'] || '').toString().trim();
+        const fullName = nameFromBody || nameFromHeader;
+        if (fullName) {
+          const parts = fullName.split(' ').filter(Boolean);
+          actor = {
+            role: (actor && actor.role) || 'Staff',
+            firstName: parts[0] || '',
+            middleName: parts.length === 3 ? parts[1] : '',
+            lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+            staffID: (actor && actor.staffID) || null,
+            patientID: (actor && actor.patientID) || null,
+            centerName: (actor && actor.centerName) || (processedBody.center || ''),
+          };
+        }
+      }
+
       await AuditTrail.create({
         role: actor?.role || 'Staff',
         firstName: actor?.firstName || '',
@@ -388,7 +407,25 @@ router.put('/:id', async (req, res) => {
     // Write audit trail: Updated bite case (only if meaningful change)
     if (meaningfulChanged) {
       try {
-        const actor = await resolveActor(req);
+        let actor = await resolveActor(req);
+        if (!actor || (!actor.firstName && !actor.lastName)) {
+          const nameFromBody = (req.body.finalAssessedBy || req.body.initiallyAssessedBy || '').toString().trim();
+          const nameFromHeader = (req.headers['x-staff-name'] || '').toString().trim();
+          const fullName = nameFromBody || nameFromHeader;
+          if (fullName) {
+            const parts = fullName.split(' ').filter(Boolean);
+            actor = {
+              role: (actor && actor.role) || 'Staff',
+              firstName: parts[0] || '',
+              middleName: parts.length === 3 ? parts[1] : '',
+              lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+              staffID: (actor && actor.staffID) || null,
+              patientID: (actor && actor.patientID) || null,
+              centerName: (actor && actor.centerName) || (update.center || existing.center || ''),
+            };
+          }
+        }
+
         await AuditTrail.create({
           role: actor?.role || 'Staff',
           firstName: actor?.firstName || '',

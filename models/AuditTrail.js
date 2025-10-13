@@ -27,6 +27,11 @@ const auditTrailSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    patientName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     centerName: {
       type: String,
       default: '',
@@ -35,7 +40,7 @@ const auditTrailSchema = new mongoose.Schema(
     action: {
       type: String,
       required: true,
-      enum: ['Signed in', 'Signed out'],
+      enum: ['Signed in', 'Signed out', 'Created bite case', 'Updated bite case'],
       index: true,
     },
     patientID: {

@@ -325,6 +325,31 @@ router.put('/:id', async (req, res) => {
 
     console.log('Applying $set update keys:', Object.keys(update));
 
+    // Determine if meaningful fields actually change before writing audit entries
+    const nonMeaningfulFields = new Set([
+      'initiallyAssessedBy',
+      'finalAssessedBy',
+      'updatedAt',
+    ]);
+    const updateKeys = Object.keys(update).filter((k) => !nonMeaningfulFields.has(k));
+    let meaningfulChanged = false;
+    try {
+      for (const key of updateKeys) {
+        const existingVal = existing.get(key);
+        const newVal = update[key];
+        // Simple deep compare via JSON for nested structures
+        const a = typeof existingVal === 'object' ? JSON.stringify(existingVal) : existingVal;
+        const b = typeof newVal === 'object' ? JSON.stringify(newVal) : newVal;
+        if (a !== b) {
+          meaningfulChanged = true;
+          break;
+        }
+      }
+    } catch (cmpErr) {
+      console.log('Compare update vs existing failed, assuming changed:', cmpErr?.message);
+      meaningfulChanged = true;
+    }
+
     const updatedBiteCase = await BiteCase.findByIdAndUpdate(
       req.params.id,
       { $set: update },
@@ -338,22 +363,26 @@ router.put('/:id', async (req, res) => {
     console.log('Bite case updated successfully:', updatedBiteCase);
     console.log('Returned philhealthNo:', updatedBiteCase.philhealthNo);
     console.log('Returned management:', updatedBiteCase.management);
-    // Write audit trail: Updated bite case
-    try {
-      const actor = await resolveActor(req);
-      await AuditTrail.create({
-        role: actor?.role || 'Staff',
-        firstName: actor?.firstName || '',
-        middleName: actor?.middleName || '',
-        lastName: actor?.lastName || '',
-        centerName: actor?.centerName || (update.center || existing.center || ''),
-        action: 'Updated bite case',
-        patientName: [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim(),
-        patientID: existing?.patientId || null,
-        staffID: actor?.staffID || null,
-      });
-    } catch (auditErr) {
-      console.error('Failed to write audit for update bite case:', auditErr);
+    // Write audit trail: Updated bite case (only if meaningful change)
+    if (meaningfulChanged) {
+      try {
+        const actor = await resolveActor(req);
+        await AuditTrail.create({
+          role: actor?.role || 'Staff',
+          firstName: actor?.firstName || '',
+          middleName: actor?.middleName || '',
+          lastName: actor?.lastName || '',
+          centerName: actor?.centerName || (update.center || existing.center || ''),
+          action: 'Updated bite case',
+          patientName: [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim(),
+          patientID: existing?.patientId || null,
+          staffID: actor?.staffID || null,
+        });
+      } catch (auditErr) {
+        console.error('Failed to write audit for update bite case:', auditErr);
+      }
+    } else {
+      console.log('No meaningful changes detected; skipping update audit log.');
     }
 
     res.json(updatedBiteCase);

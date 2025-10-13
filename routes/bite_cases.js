@@ -433,7 +433,23 @@ router.put('/:id', async (req, res) => {
           }
         }
 
-        await AuditTrail.create({
+        // De-duplicate: skip if an identical update audit was created very recently
+        let shouldWriteAudit = true;
+        try {
+          const recentSince = new Date(Date.now() - 3000); // 3 seconds
+          const last = await AuditTrail.findOne({
+            action: 'Updated bite case',
+            staffID: actor?.staffID || null,
+            patientID: existing?.patientId || null,
+            timestamp: { $gte: recentSince }
+          }).sort({ timestamp: -1 });
+          if (last) {
+            shouldWriteAudit = false;
+          }
+        } catch (_dedupeErr) {}
+
+        if (shouldWriteAudit) {
+          await AuditTrail.create({
           role: actor?.role || 'Staff',
           firstName: actor?.firstName || '',
           middleName: actor?.middleName || '',
@@ -443,7 +459,8 @@ router.put('/:id', async (req, res) => {
           patientName: [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim(),
           patientID: existing?.patientId || null,
           staffID: actor?.staffID || null,
-        });
+          });
+        }
       } catch (auditErr) {
         console.error('Failed to write audit for update bite case:', auditErr);
       }

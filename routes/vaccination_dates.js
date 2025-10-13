@@ -163,7 +163,8 @@ router.put('/:id', async (req, res) => {
             centerName: staff?.officeAddress || '',
             action: `Completed ${label} vaccination for ${patientName}`,
             patientName: patientName,
-            patientID: existingVaccinationDate.patientId || null,
+            // Ensure ID column shows the staff ID for vaccination completion actions
+            patientID: null,
             staffID: staff?.staffId || null,
           });
         }

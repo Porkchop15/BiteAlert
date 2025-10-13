@@ -381,12 +381,16 @@ router.put('/:id', async (req, res) => {
       meaningfulChanged = true;
     }
 
-    // Additional guard: skip audit if update occurs within 5 seconds of creation and no meaningful keys present
+    // Additional guard: skip audit if update occurs soon after creation
     try {
       const createdAtMs = (existing.createdAt ? new Date(existing.createdAt).getTime() : Date.now());
       const nowMs = Date.now();
-      const withinCreateWindow = (nowMs - createdAtMs) < 5000; // 5 seconds
-      if (withinCreateWindow && meaningfulUpdateKeys.length === 0) {
+      const withinStrictWindow = (nowMs - createdAtMs) < 30000; // 30 seconds window after creation
+      const withinCreateWindow = (nowMs - createdAtMs) < 5000; // 5 seconds (legacy guard)
+      // Skip any update audit within 30s of creation to avoid double logs on initial setup
+      if (withinStrictWindow) {
+        meaningfulChanged = false;
+      } else if (withinCreateWindow && meaningfulUpdateKeys.length === 0) {
         meaningfulChanged = false;
       }
     } catch (_timeErr) {}

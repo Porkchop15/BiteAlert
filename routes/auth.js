@@ -126,9 +126,8 @@ router.post('/login', async (req, res) => {
               firstName: staff.firstName,
               middleName: staff.middleName || '',
               lastName: staff.lastName,
+              centerName: staff.officeAddress || '',
               action: 'Signed in',
-              adminID: null,
-              superAdminID: null,
               patientID: null,
               staffID: staff.staffId,
             });
@@ -199,9 +198,8 @@ router.post('/login', async (req, res) => {
               firstName: patient.firstName,
               middleName: patient.middleName || '',
               lastName: patient.lastName,
+              centerName: patient.barangay || '',
               action: 'Signed in',
-              adminID: null,
-              superAdminID: null,
               patientID: patient.patientId,
               staffID: null,
             });
@@ -773,9 +771,8 @@ router.post('/logout', async (req, res) => {
             firstName: staff.firstName,
             middleName: staff.middleName || '',
             lastName: staff.lastName,
+            centerName: staff.officeAddress || '',
             action: 'Signed out',
-            adminID: null,
-            superAdminID: null,
             patientID: null,
             staffID: staff.staffId,
           });
@@ -792,9 +789,8 @@ router.post('/logout', async (req, res) => {
             firstName: patient.firstName,
             middleName: patient.middleName || '',
             lastName: patient.lastName,
+            centerName: patient.barangay || '',
             action: 'Signed out',
-            adminID: null,
-            superAdminID: null,
             patientID: patient.patientId,
             staffID: null,
           });

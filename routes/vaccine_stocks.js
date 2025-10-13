@@ -1,6 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const VaccineStock = require('../models/VaccineStock');
+const AuditTrail = require('../models/AuditTrail');
+const Staff = require('../models/Staff');
+const jwt = require('jsonwebtoken');
+
+async function resolveStaff(req) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if ((decoded.role || '').toLowerCase() === 'staff') {
+        const staff = await Staff.findOne({ staffId: decoded.userId });
+        if (staff) {
+          return staff;
+        }
+      }
+    }
+  } catch (_) {}
+  return null;
+}
 
 // Error handler middleware
 const handleError = (res, error, status = 500) => {
@@ -94,6 +114,24 @@ router.post('/', async (req, res) => {
     });
 
     const savedStock = await newStock.save();
+
+    // Audit: Added vaccine stock
+    try {
+      const staff = await resolveStaff(req);
+      await AuditTrail.create({
+        role: 'Staff',
+        firstName: staff?.firstName || '',
+        middleName: staff?.middleName || '',
+        lastName: staff?.lastName || '',
+        centerName: centerName,
+        action: `Added vaccine stocks for ${centerName}`,
+        patientName: '',
+        patientID: null,
+        staffID: staff?.staffId || null,
+      });
+    } catch (e) {
+      console.error('Failed to write audit for add vaccine stocks:', e);
+    }
     res.status(201).json({
       success: true,
       data: savedStock
@@ -158,6 +196,24 @@ router.put('/:centerName', async (req, res) => {
       success: true,
       data: updatedStock
     });
+
+    // Audit: Updated vaccine stock
+    try {
+      const staff = await resolveStaff(req);
+      await AuditTrail.create({
+        role: 'Staff',
+        firstName: staff?.firstName || '',
+        middleName: staff?.middleName || '',
+        lastName: staff?.lastName || '',
+        centerName: centerName,
+        action: `Updated vaccine stocks for ${centerName}`,
+        patientName: '',
+        patientID: null,
+        staffID: staff?.staffId || null,
+      });
+    } catch (e) {
+      console.error('Failed to write audit for update vaccine stocks:', e);
+    }
   } catch (error) {
     handleError(res, error, 400);
   }
@@ -180,6 +236,24 @@ router.delete('/:centerName', async (req, res) => {
       success: true,
       message: 'Center deleted successfully'
     });
+
+    // Audit: Deleted vaccine stock
+    try {
+      const staff = await resolveStaff(req);
+      await AuditTrail.create({
+        role: 'Staff',
+        firstName: staff?.firstName || '',
+        middleName: staff?.middleName || '',
+        lastName: staff?.lastName || '',
+        centerName: centerName,
+        action: `Deleted vaccine stocks for ${centerName}`,
+        patientName: '',
+        patientID: null,
+        staffID: staff?.staffId || null,
+      });
+    } catch (e) {
+      console.error('Failed to write audit for delete vaccine stocks:', e);
+    }
   } catch (error) {
     handleError(res, error);
   }

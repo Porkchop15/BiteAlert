@@ -1,6 +1,73 @@
 const express = require('express');
 const router = express.Router();
 const BiteCase = require('../models/BiteCase');
+const AuditTrail = require('../models/AuditTrail');
+const Staff = require('../models/Staff');
+const Patient = require('../models/Patient');
+const jwt = require('jsonwebtoken');
+
+// Resolve actor (staff or patient) from Authorization header or fallback headers
+async function resolveActor(req) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const role = (decoded.role || '').toLowerCase();
+        if (role === 'staff') {
+          const staff = await Staff.findOne({ staffId: decoded.userId });
+          if (staff) {
+            return {
+              role: 'Staff',
+              firstName: staff.firstName,
+              middleName: staff.middleName || '',
+              lastName: staff.lastName,
+              staffID: staff.staffId,
+              patientID: null,
+              centerName: staff.officeAddress || '',
+            };
+          }
+        } else if (role === 'patient') {
+          const patient = await Patient.findOne({ patientId: decoded.userId });
+          if (patient) {
+            return {
+              role: 'Patient',
+              firstName: patient.firstName,
+              middleName: patient.middleName || '',
+              lastName: patient.lastName,
+              staffID: null,
+              patientID: patient.patientId,
+              centerName: patient.barangay || '',
+            };
+          }
+        }
+      } catch (e) {
+        // ignore token errors; fall back to headers
+      }
+    }
+
+    // Fallback via custom headers (best-effort)
+    const headerName = (req.headers['x-staff-name'] || '').toString();
+    const headerCenter = (req.headers['x-staff-center'] || '').toString();
+    if (headerName) {
+      const parts = headerName.split(' ');
+      return {
+        role: 'Staff',
+        firstName: parts[0] || '',
+        middleName: parts.length === 3 ? parts[1] : '',
+        lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+        staffID: null,
+        patientID: null,
+        centerName: headerCenter || '',
+      };
+    }
+
+    return null;
+  } catch (_e) {
+    return null;
+  }
+}
 
 // Create a new bite case
 router.post('/', async (req, res) => {
@@ -163,6 +230,23 @@ router.post('/', async (req, res) => {
     console.log('Bite case saved successfully:', savedBiteCase);
     console.log('Backend create - PhilHealth No saved:', savedBiteCase.philhealthNo);
     console.log('Backend create - Management object saved:', savedBiteCase.management);
+    // Write audit trail: Created bite case
+    try {
+      const actor = await resolveActor(req);
+      await AuditTrail.create({
+        role: actor?.role || 'Staff',
+        firstName: actor?.firstName || '',
+        middleName: actor?.middleName || '',
+        lastName: actor?.lastName || '',
+        centerName: actor?.centerName || (processedBody.center || ''),
+        action: 'Created bite case',
+        patientID: processedBody.patientId || null,
+        staffID: actor?.staffID || null,
+      });
+    } catch (auditErr) {
+      console.error('Failed to write audit for create bite case:', auditErr);
+    }
+
     res.status(201).json(savedBiteCase);
   } catch (error) {
     console.error('Error creating bite case:', error);
@@ -253,6 +337,23 @@ router.put('/:id', async (req, res) => {
     console.log('Bite case updated successfully:', updatedBiteCase);
     console.log('Returned philhealthNo:', updatedBiteCase.philhealthNo);
     console.log('Returned management:', updatedBiteCase.management);
+    // Write audit trail: Updated bite case
+    try {
+      const actor = await resolveActor(req);
+      await AuditTrail.create({
+        role: actor?.role || 'Staff',
+        firstName: actor?.firstName || '',
+        middleName: actor?.middleName || '',
+        lastName: actor?.lastName || '',
+        centerName: actor?.centerName || (update.center || existing.center || ''),
+        action: 'Updated bite case',
+        patientID: existing?.patientId || null,
+        staffID: actor?.staffID || null,
+      });
+    } catch (auditErr) {
+      console.error('Failed to write audit for update bite case:', auditErr);
+    }
+
     res.json(updatedBiteCase);
   } catch (error) {
     console.error('Error updating bite case:', error);

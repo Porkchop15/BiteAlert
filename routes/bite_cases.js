@@ -415,6 +415,11 @@ router.put('/:id', async (req, res) => {
     // Write audit trail: Updated bite case (only if meaningful change)
     if (meaningfulChanged) {
       try {
+        const auditIntent = (req.headers['x-audit-intent'] || '').toString().toLowerCase();
+        if (auditIntent.includes('suppress') || auditIntent === 'vaccination') {
+          // Skip audit when invoked as part of vaccination flows
+          return res.json(updatedBiteCase);
+        }
         let actor = await resolveActor(req);
         if (!actor || (!actor.firstName && !actor.lastName)) {
           const nameFromBody = (req.body.finalAssessedBy || req.body.initiallyAssessedBy || '').toString().trim();

@@ -19,6 +19,12 @@ async function resolveStaff(req) {
         if (staff) return staff;
       }
     }
+    // Fallback to headers
+    const headerStaffId = (req.headers['x-staff-id'] || '').toString();
+    if (headerStaffId) {
+      const staff = await Staff.findOne({ staffId: headerStaffId });
+      if (staff) return staff;
+    }
   } catch (_) {}
   return null;
 }

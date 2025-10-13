@@ -3,7 +3,8 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 const Patient = require('../models/Patient');
-const { generateVerificationToken, sendVerificationEmail } = require('../services/emailService');
+const AuditTrail = require('../models/AuditTrail');
+const { generateVerificationToken, sendVerificationEmail, sendEmailViaAPI } = require('../services/emailService');
 const path = require('path');
 
 // Debug route to check database contents
@@ -117,6 +118,23 @@ router.post('/login', async (req, res) => {
             { expiresIn: '24h' }
           );
           console.log('=== LOGIN SUCCESS (STAFF) ===');
+
+          // Create audit trail for sign-in (staff)
+          try {
+            await AuditTrail.create({
+              role: 'Staff',
+              firstName: staff.firstName,
+              middleName: staff.middleName || '',
+              lastName: staff.lastName,
+              action: 'Signed in',
+              adminID: null,
+              superAdminID: null,
+              patientID: null,
+              staffID: staff.staffId,
+            });
+          } catch (auditErr) {
+            console.error('Failed to write staff sign-in audit:', auditErr);
+          }
           
           const userData = {
             id: staff.staffId,
@@ -173,6 +191,23 @@ router.post('/login', async (req, res) => {
             { expiresIn: '24h' }
           );
           console.log('=== LOGIN SUCCESS (PATIENT) ===');
+
+          // Create audit trail for sign-in (patient)
+          try {
+            await AuditTrail.create({
+              role: 'Patient',
+              firstName: patient.firstName,
+              middleName: patient.middleName || '',
+              lastName: patient.lastName,
+              action: 'Signed in',
+              adminID: null,
+              superAdminID: null,
+              patientID: patient.patientId,
+              staffID: null,
+            });
+          } catch (auditErr) {
+            console.error('Failed to write patient sign-in audit:', auditErr);
+          }
           
           const userData = {
             id: patient.patientId,
@@ -335,16 +370,34 @@ router.post('/register', async (req, res) => {
     await user.save();
     console.log('User saved successfully');
 
-    // Send verification email (only if not pre-verified)
+    // Send verification email (only if not pre-verified) - NON-BLOCKING
     if (isVerified !== true && verificationToken) {
-      try {
-        console.log('Attempting to send verification email...');
-        await sendVerificationEmail(normalizedEmail, verificationToken);
-        console.log('Verification email sent successfully');
-      } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
-        // Don't prevent registration if email fails
-      }
+      // Start email sending in background without waiting
+      console.log('Starting verification email process in background...');
+      
+      // Use setImmediate to make this truly non-blocking
+      setImmediate(async () => {
+        try {
+          console.log('Attempting to send verification email...');
+          let emailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
+          
+        // If main email service fails, try fallback service
+        if (!emailSent) {
+          console.log('Main email service failed, trying fallback service...');
+          emailSent = await sendEmailViaAPI(normalizedEmail, verificationToken);
+        }
+          
+          if (emailSent) {
+            console.log('Verification email sent successfully');
+          } else {
+            console.log('All email services failed, but registration continues');
+          }
+        } catch (emailError) {
+          console.error('Failed to send verification email:', emailError);
+          // Don't prevent registration if email fails
+          console.log('Registration will continue despite email failure');
+        }
+      });
     } else {
       console.log('Skipping verification email - user is pre-verified');
     }
@@ -459,15 +512,38 @@ router.post('/forgot-password', async (req, res) => {
     console.log('OTP stored successfully');
     console.log('Current OTP store contents:', Array.from(otpStore.entries()));
 
-    // Send OTP via email
-    try {
-      await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
-      console.log('OTP email sent successfully');
-      return res.json({ message: 'OTP sent successfully' });
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      return res.status(500).json({ message: 'Error sending OTP' });
-    }
+    // Send OTP via email - NON-BLOCKING
+    console.log('Starting OTP email process in background...');
+    
+    // Start email sending in background without waiting
+    setImmediate(async () => {
+      try {
+        console.log('Attempting to send OTP email...');
+        let emailSent = await sendVerificationEmail(normalizedEmail, otp, 'password-reset');
+        
+        // If main email service fails, try fallback service
+        if (!emailSent) {
+          console.log('Main email service failed, trying fallback service...');
+          emailSent = await sendEmailViaAPI(normalizedEmail, otp, 'password-reset');
+        }
+        
+        if (emailSent) {
+          console.log('OTP email sent successfully');
+        } else {
+          console.log('All email services failed, but OTP is still valid');
+        }
+      } catch (error) {
+        console.error('Error sending OTP:', error);
+        console.log('Email sending failed, but OTP is still valid:', otp);
+      }
+    });
+    
+    // Return immediately without waiting for email
+    console.log('OTP generated successfully, returning response immediately');
+    return res.json({ 
+      message: 'OTP sent successfully. Please check your email.',
+      otp: otp // Include OTP in response for testing (remove in production)
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     return res.status(500).json({ message: 'Server error' });
@@ -569,4 +645,169 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Manual verification endpoint (for testing when emails don't work)
+router.get('/manual-verify/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('=== MANUAL VERIFICATION REQUEST ===');
+    console.log('Email:', normalizedEmail);
+    
+    // Find user in both collections
+    const staff = await Staff.findOne({ email: normalizedEmail });
+    const patient = await Patient.findOne({ email: normalizedEmail });
+    
+    const user = staff || patient;
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found',
+        email: normalizedEmail 
+      });
+    }
+    
+    if (user.isVerified) {
+      return res.json({ 
+        message: 'Account is already verified',
+        email: normalizedEmail,
+        isVerified: true
+      });
+    }
+    
+    // Manually verify the account
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.tokenExpiry = undefined;
+    await user.save();
+    
+    console.log('✅ Account manually verified:', normalizedEmail);
+    
+    return res.json({ 
+      message: 'Account successfully verified',
+      email: normalizedEmail,
+      isVerified: true,
+      userId: user.staffId || user.patientId
+    });
+    
+  } catch (error) {
+    console.error('Manual verification error:', error);
+    return res.status(500).json({ 
+      message: 'Manual verification failed', 
+      error: error.message 
+    });
+  }
+});
+
+// Email testing endpoint (for debugging)
+router.post('/test-email', async (req, res) => {
+  try {
+    const { email, type = 'verification' } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    console.log('=== EMAIL TESTING ENDPOINT ===');
+    console.log('Testing email to:', email);
+    console.log('Type:', type);
+
+    const testToken = 'test-token-' + Date.now();
+    
+    // Test main email service
+    console.log('Testing main email service...');
+    let mainServiceResult = await sendVerificationEmail(email, testToken, type);
+    console.log('Main service result:', mainServiceResult);
+    
+    // Test alternative email service
+    console.log('Testing alternative email service...');
+    let altServiceResult = await sendEmailViaAPI(email, testToken, type);
+    console.log('Alternative service result:', altServiceResult);
+
+    return res.json({
+      message: 'Email test completed',
+      results: {
+        mainService: mainServiceResult,
+        alternativeService: altServiceResult,
+        testToken: testToken,
+        email: email,
+        type: type
+      }
+    });
+  } catch (error) {
+    console.error('Email test error:', error);
+    return res.status(500).json({ 
+      message: 'Email test failed', 
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router; 
+
+// Logout route - expects Authorization: Bearer <token>
+router.post('/logout', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    if (!token) {
+      return res.status(400).json({ message: 'Missing token' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+
+    // decoded contains { userId, role }
+    const role = (decoded.role || '').toLowerCase();
+
+    if (role === 'staff') {
+      const staff = await Staff.findOne({ staffId: decoded.userId });
+      if (staff) {
+        try {
+          await AuditTrail.create({
+            role: 'Staff',
+            firstName: staff.firstName,
+            middleName: staff.middleName || '',
+            lastName: staff.lastName,
+            action: 'Signed out',
+            adminID: null,
+            superAdminID: null,
+            patientID: null,
+            staffID: staff.staffId,
+          });
+        } catch (auditErr) {
+          console.error('Failed to write staff sign-out audit:', auditErr);
+        }
+      }
+    } else if (role === 'patient') {
+      const patient = await Patient.findOne({ patientId: decoded.userId });
+      if (patient) {
+        try {
+          await AuditTrail.create({
+            role: 'Patient',
+            firstName: patient.firstName,
+            middleName: patient.middleName || '',
+            lastName: patient.lastName,
+            action: 'Signed out',
+            adminID: null,
+            superAdminID: null,
+            patientID: patient.patientId,
+            staffID: null,
+          });
+        } catch (auditErr) {
+          console.error('Failed to write patient sign-out audit:', auditErr);
+        }
+      }
+    }
+
+    // For stateless JWT, we cannot invalidate the token server-side without a blacklist.
+    return res.json({ message: 'Logged out' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});

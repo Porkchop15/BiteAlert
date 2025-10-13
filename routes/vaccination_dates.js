@@ -2,6 +2,26 @@ const express = require('express');
 const router = express.Router();
 const VaccinationDate = require('../models/VaccinationDate');
 const mongoose = require('mongoose');
+const AuditTrail = require('../models/AuditTrail');
+const Staff = require('../models/Staff');
+const Patient = require('../models/Patient');
+const BiteCase = require('../models/BiteCase');
+const jwt = require('jsonwebtoken');
+
+async function resolveStaff(req) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if ((decoded.role || '').toLowerCase() === 'staff') {
+        const staff = await Staff.findOne({ staffId: decoded.userId });
+        if (staff) return staff;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
 
 // Create vaccination dates for a bite case
 router.post('/', async (req, res) => {
@@ -97,6 +117,56 @@ router.put('/:id', async (req, res) => {
     }
 
     console.log('Updated vaccination date:', updatedVaccinationDate);
+
+    // Write audit trail per dose status change
+    try {
+      const staff = await resolveStaff(req);
+      const doseLabels = {
+        d0Status: 'Day 0',
+        d3Status: 'Day 3',
+        d7Status: 'Day 7',
+        d14Status: 'Day 14',
+        d28Status: 'Day 28/30',
+      };
+
+      // Load patient name if possible
+      let patientName = '';
+      try {
+        const biteCase = await BiteCase.findOne({ registrationNumber: existingVaccinationDate.registrationNumber });
+        if (biteCase) {
+          patientName = [biteCase.firstName, biteCase.middleName, biteCase.lastName].filter(Boolean).join(' ').trim();
+        } else if (existingVaccinationDate.patientId) {
+          const patient = await Patient.findOne({ patientId: existingVaccinationDate.patientId });
+          if (patient) patientName = [patient.firstName, patient.middleName, patient.lastName].filter(Boolean).join(' ').trim();
+        }
+      } catch (_) {}
+
+      const prev = existingVaccinationDate;
+      const curr = updatedVaccinationDate;
+      const statusKeys = ['d0Status','d3Status','d7Status','d14Status','d28Status'];
+      for (const key of statusKeys) {
+        const before = prev[key];
+        const after = curr[key];
+        if (before !== after && typeof after === 'string' && after.toLowerCase() === 'completed') {
+          const label = doseLabels[key] || key;
+          await AuditTrail.create({
+            role: 'Staff',
+            firstName: staff?.firstName || '',
+            middleName: staff?.middleName || '',
+            lastName: staff?.lastName || '',
+            centerName: staff?.officeAddress || '',
+            action: `Completed ${label} vaccination for ${patientName}`,
+            patientName: patientName,
+            patientID: existingVaccinationDate.patientId || null,
+            staffID: staff?.staffId || null,
+          });
+        }
+      }
+
+    } catch (auditErr) {
+      console.error('Failed to write audit for vaccination status update:', auditErr);
+    }
+
     res.json(updatedVaccinationDate);
   } catch (error) {
     console.error('Error updating vaccination dates:', error);

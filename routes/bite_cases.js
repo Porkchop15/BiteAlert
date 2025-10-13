@@ -428,12 +428,16 @@ router.put('/:id', async (req, res) => {
     console.log('Bite case updated successfully:', updatedBiteCase);
     console.log('Returned philhealthNo:', updatedBiteCase.philhealthNo);
     console.log('Returned management:', updatedBiteCase.management);
-    // Write audit trail: Updated bite case (only if meaningful change)
+    // Write audit trail: Updated bite case (only if meaningful change and explicitly intended)
     if (meaningfulChanged) {
       try {
         const auditIntent = (req.headers['x-audit-intent'] || '').toString().toLowerCase();
         if (auditIntent.includes('suppress') || auditIntent === 'vaccination') {
           // Skip audit when invoked as part of vaccination flows
+          return res.json(updatedBiteCase);
+        }
+        // Only log update audits when client explicitly signals intent
+        if (auditIntent !== 'update') {
           return res.json(updatedBiteCase);
         }
         let actor = await resolveActor(req);

@@ -252,14 +252,15 @@ router.post('/', async (req, res) => {
         }
       }
 
+      const patientFullName = [processedBody.firstName, processedBody.middleName, processedBody.lastName].filter(Boolean).join(' ').trim();
       await AuditTrail.create({
         role: actor?.role || 'Staff',
         firstName: actor?.firstName || '',
         middleName: actor?.middleName || '',
         lastName: actor?.lastName || '',
         centerName: actor?.centerName || (processedBody.center || ''),
-        action: 'Created bite case',
-        patientName: [processedBody.firstName, processedBody.middleName, processedBody.lastName].filter(Boolean).join(' ').trim(),
+        action: `Created bite case for ${patientFullName}`,
+        patientName: patientFullName,
         patientID: processedBody.patientId || null,
         staffID: actor?.staffID || null,
       });
@@ -449,14 +450,15 @@ router.put('/:id', async (req, res) => {
         } catch (_dedupeErr) {}
 
         if (shouldWriteAudit) {
-          await AuditTrail.create({
+        const patientFullName = [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim();
+        await AuditTrail.create({
           role: actor?.role || 'Staff',
           firstName: actor?.firstName || '',
           middleName: actor?.middleName || '',
           lastName: actor?.lastName || '',
           centerName: actor?.centerName || (update.center || existing.center || ''),
-          action: 'Updated bite case',
-          patientName: [existing.firstName, existing.middleName, existing.lastName].filter(Boolean).join(' ').trim(),
+          action: `Updated bite case for ${patientFullName}`,
+          patientName: patientFullName,
           patientID: existing?.patientId || null,
           staffID: actor?.staffID || null,
           });

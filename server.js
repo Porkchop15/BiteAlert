@@ -58,7 +58,7 @@ app.use(cors({
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Staff-Name', 'X-Staff-Center'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Staff-Name', 'X-Staff-Center', 'X-Staff-Id', 'X-Audit-Intent'],
   credentials: true,
   maxAge: 86400 // 24 hours
 }));

@@ -40,11 +40,6 @@ const staffSchema = new mongoose.Schema({
     required: [true, 'Phone number is required'],
     trim: true
   },
-  additionalContactNumber: {
-    type: String,
-    default: '',
-    trim: true
-  },
   birthdate: {
     type: Date,
     required: [true, 'Birthdate is required']
